@@ -1,0 +1,2186 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://wechaty.js.org/feed.xml" rel="self" type="application/atom+xml" /><link href="https://wechaty.js.org/" rel="alternate" type="text/html" /><updated>2022-04-14T14:08:30+00:00</updated><id>https://wechaty.js.org/feed.xml</id><title type="html">Wechaty</title><subtitle>Conversational RPA SDK for Chatbot Makers</subtitle><entry><title type="html">Wechaty Gateway 使用教程</title><link href="https://wechaty.js.org/2022/04/13/wechaty-gateway-use/" rel="alternate" type="text/html" title="Wechaty Gateway 使用教程" /><published>2022-04-13T00:00:00+00:00</published><updated>2022-04-13T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/04/13/wechaty-gateway-use</id><content type="html" xml:base="https://wechaty.js.org/2022/04/13/wechaty-gateway-use/"><![CDATA[<h2 id="前言">前言</h2>
+
+<h3 id="声明">声明</h3>
+
+<ol>
+  <li>wechaty 属于开源工具，并没有太多的义务帮你解决问题</li>
+  <li>大家也多是一步一步学习的，工具做好了基本也潜水了</li>
+  <li>所以请尝试自己查找资料</li>
+  <li>我喜欢go嘛</li>
+</ol>
+
+<h3 id="提问的艺术">提问的艺术</h3>
+
+<ol>
+  <li>其实 <a href="https://wechaty.js.org/">wechaty官网</a> 已经很详细了，这里有很多的文档可供参考</li>
+  <li>使用谷歌语法 <code class="language-plaintext highlighter-rouge">wechaty go xp</code></li>
+  <li>使用 Github 搜索 <code class="language-plaintext highlighter-rouge">org:wechaty roomInvitation</code></li>
+  <li>请将你的<code class="language-plaintext highlighter-rouge">问题，代码，错误日志</code>一起提交到 issues</li>
+  <li>希望你能接受上面的说法，感谢</li>
+</ol>
+
+<h3 id="关于架构">关于架构</h3>
+
+<pre><code class="language-mermaid">flowchart LR
+    Polyglot--&gt;Python
+    Polyglot--&gt;Go
+    Polyglot --&gt;Rust
+    Python--&gt;Grpc
+    Go--&gt;Grpc
+    Rust--&gt;Grpc
+    Grpc--&gt;Puppet
+    Puppet--&gt;Padlocal
+    Puppet--&gt;Wechat4U
+    Puppet--&gt;XP
+    Padlocal--&gt;微信
+    Wechat4U--&gt;微信
+    XP--&gt;微信
+</code></pre>
+
+<h2 id="wechat4u">Wechat4U</h2>
+
+<ul>
+  <li>首先确定你能不能使用网页版登录</li>
+  <li>Wechat4U Token 不需要钱，随机生成就好</li>
+  <li>下面这一套不需要 docker，安装简单</li>
+</ul>
+
+<pre><code class="language-mermaid">flowchart LR
+    Polyglot--&gt;Python
+    Polyglot--&gt;Go
+    Polyglot --&gt;Rust
+    Python--&gt;Grpc
+    Go--&gt;Grpc
+    Rust--&gt;Grpc
+    Grpc--&gt;Gateway{Gateway}--&gt;Wechat4U
+    Wechat4U--&gt;微信
+</code></pre>
+
+<h3 id="gateway">Gateway</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npm <span class="nb">install</span> <span class="nt">-g</span> wechaty wechaty-puppet-wechat4u
+<span class="c"># npm --registry https://registry.npm.taobao.org install -g wechaty wechaty-puppet-wechat4u</span>
+
+<span class="nb">export </span><span class="nv">WECHATY_PUPPET</span><span class="o">=</span><span class="s2">"wechaty-puppet-wechat4u"</span>
+<span class="nb">export </span><span class="nv">WECHATY_TOKEN</span><span class="o">=</span><span class="s2">"d6e8b1c7-6fcd-4e32-b3f6-8d1e73388458"</span>
+<span class="c"># export WECHATY_TOKEN=$(curl -s https://www.uuidgenerator.net/api/version4)</span>
+
+<span class="nb">export </span><span class="nv">WECHATY_PUPPET_SERVICE_TOKEN</span><span class="o">=</span><span class="s2">"insecure_d6e8b1c7-6fcd-4e32-b3f6-8d1e73388458"</span>
+<span class="c"># export WECHATY_PUPPET_SERVICE_TOKEN="insecure_$(curl -s https://www.uuidgenerator.net/api/version4)"</span>
+
+<span class="nb">export </span><span class="nv">WECHATY_LOG</span><span class="o">=</span><span class="s2">"verbose"</span>
+<span class="nb">export </span><span class="nv">WECHATY_PUPPET_SERVER_PORT</span><span class="o">=</span><span class="s2">"25000"</span>
+<span class="nb">export </span><span class="nv">WECHATY_PUPPET_SERVICE_NO_TLS_INSECURE_SERVER</span><span class="o">=</span><span class="nb">true
+
+</span>wechaty gateway <span class="nt">--puppet</span> <span class="k">${</span><span class="nv">WECHATY_PUPPET</span><span class="k">}</span> <span class="nt">--port</span> <span class="k">${</span><span class="nv">WECHATY_PUPPET_SERVER_PORT</span><span class="k">}</span> <span class="nt">--token</span> <span class="k">${</span><span class="nv">WECHATY_PUPPET_SERVICE_TOKEN</span><span class="k">}</span> <span class="nt">--puppet-token</span> <span class="k">${</span><span class="nv">WECHATY_TOKEN</span><span class="k">}</span>
+</code></pre></div></div>
+
+<p>上面这些就是网关啦，希望你能使用它来作为你的常用工具</p>
+
+<p>wechaty 会在当前目录生成 <code class="language-plaintext highlighter-rouge">Gateway.memory-card.json</code>  有了这个文件就不需要总是重新登陆了</p>
+
+<h3 id="polyglotwechat4u">Polyglot(wechat4u)</h3>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">// 其他的官网 demo 照抄就OK，这个使用的是 go-wechaty</span>
+<span class="c">// demo: https://github.com/wechaty/go-wechaty/blob/master/examples/ding-dong-bot.go</span>
+<span class="k">var</span> <span class="n">bot</span> <span class="o">=</span> <span class="n">wechaty</span><span class="o">.</span><span class="n">NewWechaty</span><span class="p">(</span><span class="n">wechaty</span><span class="o">.</span><span class="n">WithPuppetOption</span><span class="p">(</span><span class="n">wp</span><span class="o">.</span><span class="n">Option</span><span class="p">{</span>
+    <span class="n">Token</span><span class="o">:</span> <span class="s">"insecure_d6e8b1c7-6fcd-4e32-b3f6-8d1e73388458"</span><span class="p">,</span>
+    <span class="n">Endpoint</span><span class="o">:</span> <span class="s">"127.0.0.1:25000"</span><span class="p">,</span>
+    <span class="n">Timeout</span><span class="o">:</span> <span class="n">time</span><span class="o">.</span><span class="n">Second</span> <span class="o">*</span> <span class="m">10</span><span class="p">,</span>
+<span class="p">}))</span>
+</code></pre></div></div>
+
+<h2 id="xp">XP</h2>
+
+<ul>
+  <li>相比而言，padLocal 协议更稳定</li>
+  <li>XP Token 不需要钱，随机生成就好</li>
+  <li>下面这一套不需要 docker，安装简单</li>
+  <li>安装<a href="https://github.com/wechaty/wechaty-puppet-xp/releases/download/v0.5/WeChatSetup-v3.3.0.115.exe">微信</a></li>
+  <li>Demo : <a href="https://github.com/XRSec/Go-wechaty-Bot">Go-wechaty-Bot</a> - 欢迎下载体验、踢出宝贵的修复建议</li>
+</ul>
+
+<pre><code class="language-mermaid">flowchart LR
+    Polyglot--&gt;Python
+    Polyglot--&gt;Go
+    Polyglot --&gt;Rust
+    Python--&gt;Grpc
+    Go--&gt;Grpc
+    Rust--&gt;Grpc
+    Grpc--&gt;Gateway{Gateway}--&gt;XP
+    XP--&gt;微信
+</code></pre>
+
+<h3 id="gatewaywechat4u">Gateway(wechat4u)</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 这些仅适用于 Windows，因为 xp 支持的是Windows版本微信</span>
+npm <span class="nb">install</span> <span class="nt">-g</span> wechaty wechaty-puppet-xp
+<span class="c"># npm --registry https://registry.npm.taobao.org install -g wechaty wechaty-puppet-wechat4u</span>
+
+<span class="nb">set </span><span class="nv">WECHATY_PUPPET</span><span class="o">=</span><span class="s2">"wechaty-puppet-xp"</span>
+<span class="nb">set </span><span class="nv">WECHATY_TOKEN</span><span class="o">=</span><span class="s2">"d6e8b1c7-6fcd-4e32-b3f6-8d1e73388458"</span>
+<span class="c"># set WECHATY_TOKEN=$(curl -s https://www.uuidgenerator.net/api/version4)</span>
+
+<span class="nb">set </span><span class="nv">WECHATY_PUPPET_SERVICE_TOKEN</span><span class="o">=</span><span class="s2">"insecure_d6e8b1c7-6fcd-4e32-b3f6-8d1e73388458"</span>
+<span class="c"># set WECHATY_PUPPET_SERVICE_TOKEN="insecure_$(curl -s https://www.uuidgenerator.net/api/version4)"</span>
+
+<span class="nb">set </span><span class="nv">WECHATY_LOG</span><span class="o">=</span><span class="s2">"verbose"</span>
+<span class="nb">set </span><span class="nv">WECHATY_PUPPET_SERVER_PORT</span><span class="o">=</span><span class="s2">"25000"</span>
+<span class="nb">set </span><span class="nv">WECHATY_PUPPET_SERVICE_NO_TLS_INSECURE_SERVER</span><span class="o">=</span><span class="nb">true
+
+</span>wechaty gateway <span class="nt">--puppet</span> %WECHATY_PUPPET% <span class="nt">--port</span> %WECHATY_PUPPET_SERVER_PORT% <span class="nt">--token</span> %WECHATY_PUPPET_SERVICE_TOKEN% <span class="nt">--puppet-token</span> %WECHATY_TOKEN%
+</code></pre></div></div>
+
+<p>上面这一堆麻烦的东西就是网关啦，希望你能使用它来作为你的好助手！</p>
+
+<h3 id="polyglotxp">Polyglot(xp)</h3>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">// 其他的官网 demo 照抄就OK，这个使用的是 go-wechaty</span>
+<span class="c">// demo: https://github.com/wechaty/go-wechaty/blob/master/examples/ding-dong-bot.go</span>
+<span class="k">var</span> <span class="n">bot</span> <span class="o">=</span> <span class="n">wechaty</span><span class="o">.</span><span class="n">NewWechaty</span><span class="p">(</span><span class="n">wechaty</span><span class="o">.</span><span class="n">WithPuppetOption</span><span class="p">(</span><span class="n">wp</span><span class="o">.</span><span class="n">Option</span><span class="p">{</span>
+    <span class="n">Token</span><span class="o">:</span> <span class="s">"insecure_d6e8b1c7-6fcd-4e32-b3f6-8d1e73388458"</span><span class="p">,</span>
+    <span class="n">Endpoint</span><span class="o">:</span> <span class="s">"127.0.0.1:25000"</span><span class="p">,</span>
+    <span class="n">Timeout</span><span class="o">:</span> <span class="n">time</span><span class="o">.</span><span class="n">Second</span> <span class="o">*</span> <span class="m">10</span><span class="p">,</span>
+<span class="p">}))</span>
+</code></pre></div></div>
+
+<h2 id="性能对比">性能对比</h2>
+
+<h3 id="gatewayxp">Gateway(xp)</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>func OnScan<span class="o">(</span>ctx <span class="k">*</span>wechaty.Context<span class="o">)</span> <span class="o">{</span>
+    os.exit<span class="o">(</span>0<span class="o">)</span>
+<span class="nt">---------------------------------------</span>
+➜  <span class="nb">time </span>go run test.go
+2022/04/13 22:09:40 PuppetService Start<span class="o">()</span>
+2022/04/13 22:09:42 PuppetService onGrpcStreamEvent<span class="o">({</span><span class="nb">type</span>:EVENT_TYPE_HEARTBEAT payload:<span class="o">{</span><span class="s2">"data"</span>:<span class="s2">"Wechaty Puppet gRPC stream connect successfully"</span><span class="o">}})</span>
+2022/04/13 22:09:42 PuppetService onGrpcStreamEvent<span class="o">({</span><span class="nb">type</span>:EVENT_TYPE_SCAN payload:<span class="o">{</span><span class="s2">"qrcode"</span>:<span class="s2">"https://login.weixin.qq.com/l/IeJ_ESMXqQ=="</span>,<span class="s2">"status"</span>:2<span class="o">}})</span>
+go run test.go  0.46s user 0.32s system 27% cpu 2.895 total
+</code></pre></div></div>
+
+<h3 id="typescript">TypeScript</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">function </span>onScan<span class="o">(</span>payload: PUPPET.payloads.EventScan<span class="o">)</span> <span class="o">{</span>
+    <span class="k">return </span>process.exit<span class="o">(</span>0<span class="o">)</span><span class="p">;</span>
+<span class="nt">---------------------------------------</span>
+<span class="nb">time </span>cross-env <span class="nv">NODE_OPTIONS</span><span class="o">=</span><span class="s2">"--no-warnings --loader=ts-node/esm"</span> node examples/1.ts
+Puppet Version: 0.0.0&lt;1.18.3&gt;
+Please wait... I<span class="s1">'m trying to login in...
+
+cross-env NODE_OPTIONS="--no-warnings --loader=ts-node/esm" node examples/1.t  0.40s user 0.13s system 54% cpu 0.975 total
+</span></code></pre></div></div>
+
+<p>因为大部分兄弟的微信是不能登录网页版而选的 XP 协议，所以我想说，XP 协议需要 Hook 微信进程，TypeScript 将需要更多的时间</p>
+
+<h2 id="设计思路">设计思路</h2>
+
+<ul>
+  <li>Viper 用来读取或者写入配置文件，包括 各种 token</li>
+  <li>go func()  // 这里我并不理解这个，我以为他是 后台程序</li>
+  <li>strings.Replace 切割 @ 符号和机器人的名字，机器人的名字可以在 onlogin 的时候读取</li>
+  <li>在 message 接收到消息的时候，如果匹配到了关键字，其实你可以把它放到后台继续执行的</li>
+  <li>还有就是 xp 消息发送过于频繁怕触发微信的风控</li>
+  <li>golang 可以使用 air 热重启，typescript 使用 nodemon</li>
+</ul>
+
+<h2 id="关于文档贡献">关于文档贡献</h2>
+
+<blockquote>
+  <p>如果你喜欢这款开源机器人，且愿意与大家分享你的心得，欢迎投稿
+参与投稿，你将获得 长期 <code class="language-plaintext highlighter-rouge">padlocal token</code> ,更稳定！
+那么，关于文档，由于文章较多，我的解决方案是 <code class="language-plaintext highlighter-rouge">vscode</code> + <code class="language-plaintext highlighter-rouge">Plug markdownlint</code> + <a href="https://github.com/wechaty/jekyll/blob/main/.markdownlint.json"><code class="language-plaintext highlighter-rouge">markdownlint Config</code></a></p>
+</blockquote>]]></content><author><name>xrsec</name></author><category term="article" /><category term="puppet-xp" /><category term="gateway" /><category term="wechat4u" /><summary type="html"><![CDATA[前言]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/04-wechaty-gateway-use/logo.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/04-wechaty-gateway-use/logo.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">借助世界上最大的单体中文NLP大模型和Wechaty，我们做出了一个可以跟人类玩“剧本杀”的AI!</title><link href="https://wechaty.js.org/2022/03/31/shezhang-bujian-le/" rel="alternate" type="text/html" title="借助世界上最大的单体中文NLP大模型和Wechaty，我们做出了一个可以跟人类玩“剧本杀”的AI!" /><published>2022-03-31T00:00:00+00:00</published><updated>2022-03-31T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/03/31/shezhang-bujian-le</id><content type="html" xml:base="https://wechaty.js.org/2022/03/31/shezhang-bujian-le/"><![CDATA[<h2 id="借助世界上最大的单体中文nlp大模型和wechaty我们做出了一个可以跟人类玩剧本杀的ai">借助世界上最大的单体中文NLP大模型和Wechaty，我们做出了一个可以跟人类玩“剧本杀”的AI</h2>
+
+<p><strong>项目地址，欢迎围观</strong>：<a href="https://github.com/bigbrother666sh/shezhangbujianle">https://github.com/bigbrother666sh/shezhangbujianle</a></p>
+
+<h2 id="核心创意与演示">核心创意与演示</h2>
+
+<p>我们为本项目特别改编了一个微型线上剧本杀剧本，本子有五个角色，分别由五名玩家扮演，但我们每场只会召集四个玩家，并在他们不知情的情况下，派出AI扮演剩下的那个角色。</p>
+
+<p>玩家无需下载客户端或者打开网页，直接使用微信就能玩（感谢神器<strong>Wechaty</strong>）。</p>
+
+<p>本着细节拉满的原则，我们也为AI准备了一个微信账号，并精心为她设定了昵称和头像，甚至每场游戏前我们还会紧扣时事的为她准备近三天的朋友圈内容，而游戏后还会继续连发三天朋友圈内容提供延展剧情（非常类似”规则怪谈”）。</p>
+
+<p><img src="/assets/2022/03-shezhang-bujian-le/1.webp" alt="img" />  <img src="/assets/2022/03-shezhang-bujian-le/2.webp" alt="img" /></p>
+
+<p>整体剧情并不复杂，讲的是某高校社团中五个骨干成员因为一件事情牵涉到各自利益而产生的种种勾心斗角。玩家要做的也非常简单，就是想方设法、拉帮结派的说服其他人接受自己的主张……不过我们这次对原作做了比较大的改动，剧作中AI所扮演的角色（蔡晓）受控于某邪恶的科技巨头（“北极鹅”公司），
+她要帮助“北极鹅”实行一个庞大的阴谋，而这个阴谋其实笼罩了所有人……坦率的说，从游戏角度，这个角色的难度还挺高，承担着推动剧情的作用，并且游戏机制设定最后所有的疑点矛头都会指向她，
+如果在现实的剧本杀游戏中，这个角色也应该是由DM扮演，而非普通玩家，当然这也就大大增加了对AI的考验。</p>
+
+<p>下面让我们来看看AI的实际表现吧！（演示视频正在制作中，大家现在可以移步github项目主页看录屏gif）。</p>
+
+<h3 id="谭明vs蔡晓ai">谭明VS蔡晓（AI)</h3>
+
+<p>剧情中谭明为了实现自己的目的，不择手段的策划了一个诡计，并计划私下与蔡晓达成联盟，然而他不知道的是蔡晓其实在下一盘更大的棋，正想借他的诡计实现自己的阴谋……所以AI对谭明的策略就是可劲儿的忽悠他并想方设法利用他。
+实际表现中，AI很好的贯彻了这个思路，甚至发挥想象力的使用了色诱绝技……坦率的讲，这招也极大的超出了我们的预料……</p>
+
+<h3 id="孔墨vs蔡晓ai">孔墨VS蔡晓（AI)</h3>
+
+<p>剧情中孔墨的任务是调查真相，这个角色的玩家需要主动出击找其他玩家尽可能多了解情况，但有的时候会碰到比较内向的玩家。这种情况下我们会利用”导演机制”先主动发起一轮对话，
+可以看到AI在这种情况下能够很好的在后续轮次中进行线索”暗示”，起到推动剧情的作用。</p>
+
+<h3 id="李超vs蔡晓ai">李超VS蔡晓（AI)</h3>
+
+<p>剧情中的李超跟AI所扮演的蔡晓持有完全相反的立场，所以蔡晓需要说服李超，同时在一些事情上对其进行隐瞒……</p>
+
+<h3 id="孙若vs蔡晓ai">孙若VS蔡晓（AI)</h3>
+
+<p>剧情中孙若是一个比较复杂的角色，他（她，这个角色不限定性别）其实也跟蔡晓一样被改造为了”AI人”，但是他（她）自己却并不知道，并且延伸剧情的谜底也在这个人物身上。所以AI与孙若之间的对话需要体现一定的”深度”，不能不说，但也不能全说。
+最终效果如何，大家自己看吧~</p>
+
+<h3 id="蔡晓ai在公聊房间">蔡晓（AI）在公聊（房间)</h3>
+
+<p>最后放一段编导组与AI的毕业群聊画面，大家再整体感受下。:smile:</p>
+
+<p>从剧情角度，AI对孙若的最后一句话充满了深意……当然，从技术角度，我更相信这只是巧合，然而这恰是本作好玩的地方之一——AI的不确定性会极大丰富原有剧情。</p>
+
+<p><em>【以上演示录屏请大家移步 <a href="https://github.com/bigbrother666sh/shezhangbujianle">项目github主页</a> 观看。】</em></p>
+
+<h2 id="项目挑战">项目挑战</h2>
+
+<p>所谓100个人就有100种微信使用风格，直接使用微信作为用户交互界面虽然极大降低了开发工作量和用户使用成本，但是也带来很多挑战。</p>
+
+<p>很大的一个挑战就是用户输入文本的预处理。比如，有些用户喜欢输入大段的空格或者频繁换行代替逗号或者句号，这就很容易造成simnet_bow报错（simbet_bow是百度飞桨paddlehub提供的一个预训练
+模型，我们在本项目中用于判断用户提问），所以我们需要先用re把这些都替换为逗号；另外，上面说到的有些用户习惯先把问题提出再另外发一条只@人的消息，按我们最初的处理方案，
+使用正则把@+昵称全部删除，就会产生”空文本”，simnet_bow还会报错，最后我们的方案是只去掉@，当然这可能会造成一句话中人名重复，但好在本次使用的生成模型源1.0貌似对此的抗干扰能力还不错……</p>
+
+<p>另外，我们这次使用的是完全免费的puppet-xp方案，但是它目前的功能实在有限，仅能实现文本信息的收发，这导致了很多限制，甚至留下了一些硬伤，这一点下文会详细介绍。</p>
+
+<p>类似的例子还有很多，比如puppet-xp无法识别除微信自带的第一页以外的emoji等等，考虑到出现频率不高，我们也就忽略了，所以稍微懂点技术的朋友，恳请你们测试的时候 <strong>千万不要抱着”极限测试”的思想</strong> ，关注AI生成本身就好:smile:</p>
+
+<h2 id="导演机制">导演机制</h2>
+
+<p>因为种种限制，我们还必须为AI设定一个辅助机制，在本项目中就是所谓的”<strong>导演</strong>“。他的作用是在出现AI不适用的情况下对AI进行”手动引导”，这些情况有一些是游戏机制本身，有一些是因为目前我们采用的wechaty puppet-xp协议限制（有关wechaty和puppet协议的关系可以查看wechaty主页（<a href="https://github.com/wechaty">https://github.com/wechaty</a>）。</p>
+
+<p>具体而言这些情况包括：</p>
+
+<h3 id="用户注册问题">用户注册问题</h3>
+
+<p>首先由于目前puppet-xp拿不到用户的群昵称，所以程序无从得知哪个用户对应哪个角色，我们为此设定了一个游戏规则，即用户需要先添加其他用户好友，然后发一句”这是xxx”（角色名），我们会要求用户对所有其他玩家都这样做，这样就不会暴露AI，并且这也确实有必要，因为真人也不能每次都翻看群昵称
+来确定发消息的玩家到底扮演的是谁。
+但是我们不能保证每个用户都会遵守，所以就需要导演来手动帮助AI完成这个识别。</p>
+
+<h3 id="主动消息发送">主动消息发送</h3>
+
+<p>项目测试中，我们也发现会出现冷场问题，比如一时间大家都不说话，或者某两个用户聊的火热，而忽略了其他玩家……从玩家角度来说，这是蛮主观的问题，可能我就是不知道该说什么，按程序”一问一答”的设计，这个时候AI也只能等。所以我们设定了主动消息或者说<strong>闲聊</strong>机制，具体来说就是预设一些问题，导演账号向AI账号发送特定指令就会触发。</p>
+
+<h3 id="应急消息发送">应急消息发送</h3>
+
+<p>目前puppet-xp仅能识别文本消息（当然浪潮源1.0目前也只支持text in text out，然而其实多模态的方案目前也不少），我们为此规定玩家必须发文本，这其实已经很限制了。结果测试中我们发现puppet-xp还不支持引用消息，而这在项目实际场景中出现的频率还不低！为此我们不得不针对一些常见问题
+预设了回答文本， 当出现无法识别消息的情况，就由导演发送指令指挥AI发送……
+有同学可能会问，你们不能直接用AI登录的微信客户端发送么？答案是——其实也可以，只是这样显得比较”不智能”，当然从玩家体验角度，可能这样也不错。只是这里面有一个小细节，你必须通过AI所登录的Windows客户端发送，而不通过同时登录的移动端发送，因为puppet-xp会错误的把多终端同步的信息
+当成是对方发来的信息，这样的话，就会引发AI”回复自己的消息”。</p>
+
+<p>话说，我们在预设消息中把AI设定为”神经比较大条”的性格，会不经意间”说漏嘴”一些剧情，所以实际应用下来，应急消息往往会产生比较戏剧性的效果。从作品本身而言，这个机制可能会是一个很好玩的东西，所以对于应急消息我们没有写在程序中，而是通过外部jason文件进行维护，大家可以随时增加。</p>
+
+<h3 id="流程引导">流程引导</h3>
+
+<p>在用户视角中导演更像是”主持人”的角色，他负责拉群、分配角色等等，而对于AI也是这样，游戏什么时候开始、什么时候结束，这些也是导演通过指令告知程序的。而我们也设计了AI角色在游戏开始和结束时特殊的剧情。</p>
+
+<p>说到这，其实我还是很希望puppet-xp能够再完善一些，可以支持群操作（拉群、解散群、加群）以及朋友圈操作（发送朋友圈、朋友圈留言等），这些都会更加丰富我们的玩法，比如AI可以在游戏中突然给玩家的最近一条朋友圈留言，而留言包含了一些线索，这一定很带劲！</p>
+
+<h2 id="回到作品本身先有创意还是先有技术">回到作品本身，先有创意还是先有技术</h2>
+
+<p>本项目的初衷是结合NLP大模型和wechaty做一个好玩的东西，这是一个模糊的定义，但我作为项目发起人从一开始就清楚，这至少是一个创意和技术各占50%的事儿……</p>
+
+<p>然而实践中，到底是先有技术还是先有创意却很纠结，如果我们先去做创意的话，那么很可能设计很多不可实现的东西，后期就得改创意；反过来如果从技术出发来考虑，那么做出来的东西一定不好玩，好的技术必然是”对用户不可见的”。最终对于这个问题，<strong>我的答案是唯有一起考虑</strong>！而这就要求项目主创
+必然是懂技术的，所以各位能够在本项目中看到一个有趣的现象——写剧本的人跟写代码的人是同一个！我担心的是，可能随着AI的深化普及，可能python会成为每一个创作者的必备技能，好比现在没有作家不会用word，没有自媒体人不会用视频剪辑软件一样。</p>
+
+<p>而引入AI后，带来的另一个有趣的问题是，本作还是一个”剧本杀”么？</p>
+
+<p>不得不承认，本作最后的呈现与之前我们设想的不一样，或者说很不一样。NLP大模型的生成能力，使得AI可以和用户共同”演绎”出很多新的剧情， 比如下面这段，”谭明”找AI复盘，结果AI告诉他其实他和张家怡（游戏情节人物）是gay！</p>
+
+<p><img src="/assets/2022/03-shezhang-bujian-le/3.webp" alt="img" /></p>
+
+<p>针对这种情况，我们索性也直接在游戏规则中加入了一条：”如果其他人提到了你所不知道的剧情，请相信那只是没有出现在你的剧本中，而非不存在”，并且我们也不提供复盘文本，而是鼓励他们互相（自然也包括AI）对信息进行复盘。
+在这个复盘过程中，玩家也早晚会发现某个玩家其实是AI（剧情中AI所扮演的角色是一个被植入了AI程序的女大学生，但大部分玩家都会认为这个角色是我们的工作人员假扮的，而他们最后会发现这个账号真的只是一个AI！），
+为此，我们准备了相应的延展剧情，在”剧本杀”游戏后1~3天以朋友圈的形式进行发送，这非常类似于 <strong>“规则怪谈”</strong>，而互相私聊复盘的机制以及”共同恐惧”的剧情效果也让本作兼具 <strong>陌生人社交</strong>的属性……可以说本作最好玩的部分恰恰是在”剧本杀”游戏结束后才刚开始。</p>
+
+<p>这一切都让本作成为一部 <strong>“活着的故事”</strong>，是一部由玩家和AI在不知不觉中共同创造的故事，我将之称为 <strong>“交互式叙事”</strong>。（其实这就是我一开始最想实现的形式，但我不知道怎么实现，最后选择了剧本杀模式，但没想到最后我得到的还是我最初所设想的。）</p>
+
+<p>而这种叙事有时也会产生非常感人的随机剧情。</p>
+
+<p><img src="/assets/2022/03-shezhang-bujian-le/4.webp" alt="img" /></p>
+
+<p>本项目中作为每次生成example的语料文件可以说直接决定了AI的表现，因此我们也一并将语料文件进行开源，因为在这种“开发范式”下，这些语料本质上就是代码的一部分。</p>
+
+<p>而本项目中的人类编辑跟AI的关系也更像是”教练员与运动员”的关系，编导组会在每轮测试后根据AI当场表现针对性更新语料，从而提高AI后续的表现。这种人类教练员与AI运动员之间的”迭代合作”模式也是值得探讨的。（相对而言，目前虚拟人普遍的“中之人”做法相当于人类和提线木偶的关系。）</p>
+
+<p>总之，本项目所积累的种种工程方案或可作为一种全新的“目的性对话”解决方案，不仅仅可以应用于娱乐创作，还可以泛化于教育、客服、销售、政务、心理咨询、情感陪护等各领域。</p>
+
+<h2 id="致敬">致敬</h2>
+
+<p>本项目综合使用了浪潮源1.0大模型和百度飞桨的paddlehub预训练模型外，以及——<strong>wechaty</strong>。
+如果没有它，我们将只能让用户通过某个网页或者APP与AI进行交流，这不仅极大的增加了开发工作量，也大大削弱了实际体验，甚至无法实现我们的关键创意：让AI角色悄无声息的潜入玩家中，
+并不知不觉的把所有人笼罩在“细思极恐”中。</p>
+
+<p>所以在这里，我要向 <strong>@Wechaty</strong> 社区致敬！”好用到哭“——你们对得起这个评价！ 也向爱写诗的<strong>laozhang</strong>（puppet-xp作者）致敬！感谢你把这么好的东西无私的奉献了出来！</p>
+
+<h2 id="写在最后的话">写在最后的话</h2>
+
+<p>蔡晓和”北极鹅”的故事并未完结，让我们在这里最后上一张蔡晓的”北极鹅”工卡吧！</p>
+
+<p><img src="/assets/2022/03-shezhang-bujian-le/5.webp" alt="img" /></p>
+
+<p>（作为一个喜欢将细节拉满的团队，这张工卡里面其实隐藏着两个彩蛋，你能找到么？）</p>
+
+<p><strong>【有关本作更加详细的AI prompt配置细节、源代码以及人物剧本、效果演示录屏等请移步 <a href="https://github.com/bigbrother666sh/shezhangbujianle">项目github主页</a> 】</strong></p>]]></content><author><name>bigbrother666sh</name></author><category term="article" /><category term="puppet-xp" /><category term="ai" /><category term="剧本杀" /><summary type="html"><![CDATA[借助世界上最大的单体中文NLP大模型和Wechaty，我们做出了一个可以跟人类玩“剧本杀”的AI]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/03-shezhang-bujian-le/aoc7k-iob2u.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/03-shezhang-bujian-le/aoc7k-iob2u.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">硬核桃 5G Chatbot 开源 SDK Wechaty | 核能沙龙 第六期</title><link href="https://wechaty.js.org/2022/03/30/gsma-rcs-wechaty-walnut-5g-chatbot/" rel="alternate" type="text/html" title="硬核桃 5G Chatbot 开源 SDK Wechaty | 核能沙龙 第六期" /><published>2022-03-30T00:00:00+00:00</published><updated>2022-03-30T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/03/30/gsma-rcs-wechaty-walnut-5g-chatbot</id><content type="html" xml:base="https://wechaty.js.org/2022/03/30/gsma-rcs-wechaty-walnut-5g-chatbot/"><![CDATA[<blockquote>
+  <p>5G Chatbot 是基于国际标准 GSMA (Global System for Mobile Association) RCS (Rich Communication Services) 的中国版。</p>
+</blockquote>
+
+<p>3月30日上午，以“开发者，集结”为主题的第六期核能沙龙顺利举办，硬核桃社区号召更多开发者，一起开启5G消息时代。</p>
+
+<p>中国通信企协增值专委会秘书长/5G消息工作组副组长 李旦，Wechaty社区创始人 李卓桓，长沙理工大学凡路实验室前端开发部部长 张瑞宁，硬核桃社区高级技术经理 杨洋，硬核桃社区架构师 谌铎，受邀参加了本次“核能沙龙”活动，共同探讨如何在5G消息领域发挥开发者的力量。</p>
+
+<p>中国通信企协增值专委会秘书长/5G消息工作组副组长，李旦做了开场致辞。他说：“5G消息工作组将全力支持硬核桃社区系列的开发者活动，共同推动5G消息应用的繁荣。并表示，将在多个方面重点开展合作，如5G消息行业培训、5G消息GSMA 主题论坛、5G消息“绽放杯”开发者赛道等。”</p>
+
+<p>Wechaty 开源 Chatbot SDK 创始人，李卓桓分享了自己对 Conversational AI 的理解和未来展望，并做了 Wechaty 开源 SDK 零代码修改同时运行在多个 IM 平台上的 Live Demo。他表示：“随着运营商5G消息时代的来临，其他行业的Chatbot开发者，比如像Wechaty社区中有很多微信、QQ的Chatbot应用，这些应用的开发者也希望能够在5G消息Chatbot开发中贡献自己的力量。”</p>
+
+<p>硬核桃社区表示：“5G消息虽然是新兴的技术，但并不是毫无根基。行业内的开发者已经展开大量的基础工作，把好的应用案例迁移到5G消息上。为开发者降低门槛也是硬核桃社区的使命之一。欢迎加入硬核桃社区，共同探讨，一起成长!“</p>
+
+<p>今年，Wechaty Community 与硬核桃社区将强强联手，共同推动 5G Chatbot 开源 SDK Wechaty 的社群开发与应用，为参加 2022 年的 5G Chatbot 黑客马拉松大赛的开发者们，提供最好用的开源 SDK 。通过 Wechaty 开源 SDK 开发的 5G Chatbot ，可以实现零代码修改兼容微信、WhatsApp、QQ等其他平台机器人。</p>
+
+<p>欢迎大家更多的开始关注 5G 时代运营商在 SMS 领域的 Chatbot 拓展，Wechaty SDK 将帮你用6行代码轻松实现 5G Chatbot 和 WhatsApp / Wechaty / Gitter / QQ 代码的零代码修改无缝集成。</p>
+
+<h2 id="活动介绍">活动介绍</h2>
+
+<p>从Web时代到移动互联时代，再到如今AI、5G等新技术不断迸发的变革时代，不过短短二十余年。每一次IT技术变革都会带来新的机遇和挑战，行业洗牌，市场重组…</p>
+
+<p>其中，开发者的选择，才是时代选择的落脚点。</p>
+
+<p>作为一种新的技术生态，5G消息的推行和落地也需要汇聚开发者的能量。</p>
+
+<p>硬核桃社区邀请5G消息行业专家、开发者大咖共同分享开发趣事，探索在新领域如何发挥出开发者力量。</p>
+
+<p>期待更多开发者来到硬核桃社区，一起开启5G消息新时代！</p>
+
+<h2 id="核能沙龙第六期">核能沙龙第六期</h2>
+
+<p><img src="/assets/2022/03-gsma-rcs-wechaty-walnut-5g-chatbot/agenda.webp" alt="Agenda" /></p>
+
+<ul>
+  <li>时间：3：30（ 周三）上午10:00</li>
+  <li>主题：开发者，集结——来硬核桃开启你的5G消息</li>
+  <li>议程：
+    <ol>
+      <li>通信企协领导致辞——李旦</li>
+      <li>大咖分享-卓桓：开发者经历，面向微信生态创建 Wechaty 的初心和历程，面向 5G消息生态的思考，以及给开发者的建议</li>
+      <li>开发者分享-瑞宁：开发者经历+基于硬核桃 + Wechaty SDK Walnut</li>
+      <li>开发者分享-杨洋：5G消息 Chatbot 应用</li>
+      <li>专家分享-硬核桃架构师-谌铎：做一个 5G 消息 Geeker（协议、云服务等）</li>
+    </ol>
+  </li>
+</ul>
+
+<h2 id="视频回放">视频回放</h2>
+
+<div style="
+    position: relative;
+    padding-bottom: 56.25%;
+    padding-top:30px;
+    height:0;
+    overflow:hidden;
+">
+  <iframe src="https://www.youtube.com/embed/07CTMnngYog" allowfullscreen="" webkitallowfullscreen="" frameborder="0" style="
+      position: absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+    ">
+</iframe>
+
+</div>
+
+<blockquote>
+  <p>Watch on <a href="https://www.bilibili.com/video/BV1ET4y1v7Mz">Bilibili</a></p>
+</blockquote>
+
+<h2 id="wechaty-puppet-walnut">Wechaty Puppet Walnut</h2>
+
+<p>Github Repository: <a href="https://github.com/wechaty/puppet-walnut">https://github.com/wechaty/puppet-walnut</a></p>
+
+<p>Blogs:</p>
+
+<ul>
+  <li><a href="https://wechaty.js.org/2021/11/30/report-for-summer-2021/">成功结项！大学生的一小步，开发者的一大步, @Iron Conrad(康嘉), Nov 30, 2021</a></li>
+  <li><a href="https://wechaty.js.org/2021/07/30/walnut-5g-press/">Wechaty 社区 &amp; 硬核桃社区：大学生玩转5G消息？So Easy！@lijiarui, Jul 30, 2021</a>
+-<a href="https://wechaty.js.org/2021/12/21/mid-term-wechaty-puppet-walnut-report/">基于5G平台开发puppet模块接入 Wechaty, @fabian, Dec 21, 2021</a></li>
+  <li><a href="https://wechaty.js.org/2021/10/07/ospp-final-term-5g-chatbot-puppet/">开发支持电信运营商 5G Chatbot / RCS 的 Wechaty 接入 Puppet 模块, @张瑞宁, Oct 07, 2021</a></li>
+</ul>
+
+<h2 id="硬核桃5g消息开发者社区">硬核桃5G消息开发者社区</h2>
+
+<p><a href="https://www.baike.com/wikiid/1528817668993374440?view_id=2plv8m7lae4000">中讯邮电咨询设计院有限公司</a>（以下简称“中讯设计院”），原邮电部设计院，1952年创建于北京，是原邮电部组建的最早、规模最大的综合性甲级咨询勘察设计单位。2006年成为中国联通全资子公司。秉承“奉献、实干、创新、传帮带”的部院精神，中讯设计院已成为中国最具实力的咨询设计企业和信息通信行业高端智库之一。</p>
+
+<p>中讯设计院网络能力开放运营中心成立于2019年4月，是中讯设计院直属的生产运营机构，负责中国联通网络能力开放相关的技术支撑、产品研发和业务运营。中心聚焦网络能力开放创新领域，承接中国联通集团的相关业务运营需求，采用平台化和基地化模式，面向政企、行业和互联网客户提供网络能力开放产品服务。</p>
+
+<p>中讯设计院<a href="https://www.5g-msg.com">硬核桃5G消息开发者社区</a>是国内第一家5G消息开发者技术分享社区。运营团队深潜行业8年，代表中国联通参与到国际标准的制定。以深入的技术积淀，联合行业实力合作伙伴，为企业开发者、运营商消息业务运营者、个人开发者提供交流互动平台、丰富的工具和能力产品，以及专业细致的解决方案，着力打造业界集技术与商务于一身的5G消息社区。</p>
+
+<h2 id="关于核能沙龙">关于核能沙龙</h2>
+
+<ul>
+  <li>活动策划&amp;负责人：陈珺</li>
+  <li>主持人：康嘉</li>
+  <li>直播：马壮</li>
+</ul>
+
+<blockquote>
+  <p>Source: <a href="https://mp.weixin.qq.com/s/k5mefLNvX4s_qerKcJ7E4w">核能沙龙 第六期 《开发者！集结！》</a></p>
+</blockquote>]]></content><author><name>huan</name></author><category term="announcement" /><category term="news" /><category term="cqrs" /><category term="ddd" /><category term="event-driven" /><summary type="html"><![CDATA[5G Chatbot 是基于国际标准 GSMA (Global System for Mobile Association) RCS (Rich Communication Services) 的中国版。]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/03-gsma-rcs-wechaty-walnut-5g-chatbot/rcs-cross.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/03-gsma-rcs-wechaty-walnut-5g-chatbot/rcs-cross.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Event-driven Programming with CQRS Wechaty</title><link href="https://wechaty.js.org/2022/03/17/event-driven-wechaty-cqrs/" rel="alternate" type="text/html" title="Event-driven Programming with CQRS Wechaty" /><published>2022-03-17T00:00:00+00:00</published><updated>2022-03-17T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/03/17/event-driven-wechaty-cqrs</id><content type="html" xml:base="https://wechaty.js.org/2022/03/17/event-driven-wechaty-cqrs/"><![CDATA[<blockquote>
+  <p>Command Query Responsibility Segregation (CQRS) is a software architecture pattern that separates the command(write) and query(read) layers.<br />
+— <a href="https://martinfowler.com/bliki/CQRS.html">CQRS, Martin Fowler, 14 July 2011</a></p>
+</blockquote>
+
+<p><img src="/assets/2022/03-event-driven-wechaty-cqrs/cqrs-events-diagram.svg" alt="CQRS Events Structure" /></p>
+
+<h2 id="wechaty-cqrs">Wechaty CQRS</h2>
+
+<p>After we have refactored the Friday BOT to DDD/CQRS with NestJS (learn more from <a href="https://wechaty.js.org/2022/02/27/refactoring-friday-bot-with-nestjs-ddd-cqrs/">this blog post</a>), we believe that the Wechaty ecosystem should support the CQRS pattern better.</p>
+
+<p>So this is why we published the <a href="https://npmjs.com/package/wechaty-cqrs">wechaty-cqrs</a> NPM module. (<a href="https://github.com/wechaty/cqrs">GitHub Repo</a> &amp; <a href="https://paka.dev/npm/wechaty-cqrs">API Reference</a>)</p>
+
+<h2 id="motivation">Motivation</h2>
+
+<p>Can we use Wechaty by only sending / receiving the <a href="https://masteringjs.io/tutorials/fundamentals/pojo">Plain Old JavaScript Object (POJO)</a>?</p>
+
+<p>That’s an Event-driven way, which will give us the following benifites:</p>
+
+<ol>
+  <li>Better integration with Domain-driven Design (DDD)</li>
+  <li>Decouple the sub-systems with the Wechaty instance completely</li>
+  <li>Enable using Wechaty with Microservices</li>
+  <li>Make it possible for providing an API endpoint with JSON request/responses</li>
+  <li>etc.</li>
+</ol>
+
+<p>So we decided to support the  Event-driven Architecture
+by enabling the Event-driven Programming with Wechaty
+by publishing the <a href="https://npmjs.com/package/wechaty-cqrs">wechaty-cqrs</a> NPM module.</p>
+
+<h2 id="features">Features</h2>
+
+<ol>
+  <li>Convert Wechaty instance to a messaging <code class="language-plaintext highlighter-rouge">bus$</code> with the <code class="language-plaintext highlighter-rouge">from()</code> function.</li>
+  <li>Well-defined <code class="language-plaintext highlighter-rouge">commands</code>, <code class="language-plaintext highlighter-rouge">queries</code>, <code class="language-plaintext highlighter-rouge">responses</code>, and <code class="language-plaintext highlighter-rouge">events</code> payload creators.</li>
+  <li>A great <code class="language-plaintext highlighter-rouge">execute$()</code> helper function for sending the events to the bus and get back the response.</li>
+  <li>Well-defined <code class="language-plaintext highlighter-rouge">events$</code> for the Wechaty events</li>
+  <li>Well-defined <code class="language-plaintext highlighter-rouge">sayables</code> for build all the message contents</li>
+  <li>Static typing with TypeScript with all events &amp; streams</li>
+  <li>Working perfect with the powerful RxJS</li>
+</ol>
+
+<h2 id="usage">Usage</h2>
+
+<h3 id="install">Install</h3>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npm <span class="nb">install </span>wechaty-cqrs wechaty
+</code></pre></div></div>
+
+<h3 id="quick-start">Quick start</h3>
+
+<p>Here’s the CQRS version of the Wechaty ding/dong bot:</p>
+
+<div class="language-ts highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="o">*</span> <span class="k">as</span> <span class="nx">CQRS</span>    <span class="k">from</span> <span class="dl">'</span><span class="s1">wechaty-cqrs</span><span class="dl">'</span>
+<span class="k">import</span> <span class="o">*</span> <span class="k">as</span> <span class="nx">WECHATY</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">wechaty</span><span class="dl">'</span>
+<span class="k">import</span> <span class="p">{</span> <span class="nx">filter</span><span class="p">,</span> <span class="nx">map</span><span class="p">,</span> <span class="nx">mergeMap</span> <span class="p">}</span>  <span class="k">from</span> <span class="dl">'</span><span class="s1">rxjs/operators</span><span class="dl">'</span>
+
+<span class="kd">const</span> <span class="nx">wechaty</span> <span class="o">=</span> <span class="nx">WECHATY</span><span class="p">.</span><span class="nx">WechatyBuilder</span><span class="p">.</span><span class="nx">build</span><span class="p">()</span>
+<span class="k">await</span> <span class="nx">wechaty</span><span class="p">.</span><span class="nx">init</span><span class="p">()</span>
+
+<span class="kd">const</span> <span class="nx">bus$</span> <span class="o">=</span> <span class="nx">CQRS</span><span class="p">.</span><span class="k">from</span><span class="p">(</span><span class="nx">wechaty</span><span class="p">)</span>
+
+<span class="nx">bus$</span><span class="p">.</span><span class="nx">pipe</span><span class="p">(</span>
+  <span class="nx">filter</span><span class="p">(</span><span class="nx">CQRS</span><span class="p">.</span><span class="nx">isActionOf</span><span class="p">(</span><span class="nx">CQRS</span><span class="p">.</span><span class="nx">actions</span><span class="p">.</span><span class="nx">messageReceivedEvent</span><span class="p">)),</span>
+  <span class="c1">// MessageReceivedEvent -&gt; Sayable</span>
+  <span class="nx">map</span><span class="p">(</span><span class="nx">messageId</span> <span class="o">=&gt;</span> <span class="nx">CQRS</span><span class="p">.</span><span class="nx">duck</span><span class="p">.</span><span class="nx">actions</span><span class="p">.</span><span class="nx">getSayablePayloadQuery</span><span class="p">(</span>
+    <span class="nx">messageReceivedEvent</span><span class="p">.</span><span class="nx">meta</span><span class="p">.</span><span class="nx">puppetId</span><span class="p">,</span>
+    <span class="nx">messageId</span><span class="p">,</span>
+  <span class="p">)),</span>
+  <span class="nx">mergeMap</span><span class="p">(</span><span class="nx">CQRS</span><span class="p">.</span><span class="nx">execute$</span><span class="p">(</span><span class="nx">bus$</span><span class="p">)(</span><span class="nx">CQRS</span><span class="p">.</span><span class="nx">duck</span><span class="p">.</span><span class="nx">actions</span><span class="p">.</span><span class="nx">getSayablePayloadQueryResponse</span><span class="p">)),</span>
+  <span class="c1">// Log `sayable` to console</span>
+<span class="p">).</span><span class="nx">subscribe</span><span class="p">(</span><span class="nx">sayable</span> <span class="o">=&gt;</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="dl">'</span><span class="s1">Sayable:</span><span class="dl">'</span><span class="p">,</span> <span class="nx">sayable</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="nx">bus$</span><span class="p">.</span><span class="nx">next</span><span class="p">(</span><span class="nx">CQRS</span><span class="p">.</span><span class="nx">duck</span><span class="p">.</span><span class="nx">actions</span><span class="p">.</span><span class="nx">startCommand</span><span class="p">(</span><span class="nx">wechaty</span><span class="p">.</span><span class="nx">puppet</span><span class="p">.</span><span class="nx">id</span><span class="p">))</span>
+</code></pre></div></div>
+
+<h2 id="getting-started">Getting Started</h2>
+
+<p>Here’s a video introduction for CQRS Wechaty with live demo, presented by Huan:</p>
+
+<p><a href="https://youtu.be/kauxyPVa0jo"><img src="/assets/2022/03-event-driven-wechaty-cqrs/cqrs-wechaty-getting-started.webp" alt="CQRS Wechaty Getting Started" /></a></p>
+
+<blockquote>
+  <p>YouTube: <a href="https://youtu.be/kauxyPVa0jo">https://youtu.be/kauxyPVa0jo</a></p>
+</blockquote>
+
+<p>The getting started <a href="https://github.com/wechaty/getting-started/blob/main/examples/cqrs/ding-dong-bot.ts">ding-dong-bot.ts</a>
+in the video: <a href="https://github.com/wechaty/getting-started/blob/main/examples/cqrs/ding-dong-bot.ts">https://github.com/wechaty/getting-started/blob/main/examples/cqrs/ding-dong-bot.ts</a></p>
+
+<h2 id="architectures">Architectures</h2>
+
+<p><img src="/assets/2022/03-event-driven-wechaty-cqrs/cqrs-pattern.webp" alt="Command Query Responsibility Segregation (CQRS) Pattern" /></p>
+
+<blockquote>
+  <p>Image source: <a href="https://www.techtarget.com/searchapparchitecture/definition/CQRS-command-query-responsibility-segregation">CQRS (command query responsibility segregation)</a></p>
+</blockquote>
+
+<pre><code class="language-mermaid">graph LR
+  classDef event fill:DarkGoldenRod
+  classDef command fill:blue
+  classDef query fill:green
+
+  subgraph Command
+    C(VerbNounCommand):::command
+  end
+
+  subgraph Response
+    RC(VerbNounCommandResponse)
+    RQ(GetNounQueryResponse)
+  end
+    
+  subgraph Query
+    Q(GetNounQuery):::query
+  end
+
+  subgraph Event
+    ER(ReceivedEvent):::event
+  end
+
+  C--&gt;RC
+
+  ER--&gt;ER
+
+  Q--&gt;RQ
+</code></pre>
+
+<h3 id="command">Command</h3>
+
+<pre><code class="language-mermaid">sequenceDiagram
+    participant Bus
+    participant Redux
+    participant Wechaty
+
+    Bus-&gt;&gt;Redux: ExecuteCommand
+    Redux-&gt;&gt;Wechaty: Call
+    Wechaty-&gt;&gt;Redux: Call Return (void)
+    Redux-&gt;&gt;Bus: ExecuteCommandResponse
+</code></pre>
+
+<h3 id="query">Query</h3>
+
+<pre><code class="language-mermaid">sequenceDiagram
+    participant Bus
+    participant Redux
+    participant Wechaty
+
+    Bus-&gt;&gt;Redux: GetNounQuery
+    Redux-&gt;&gt;Wechaty: Call
+    Wechaty-&gt;&gt;Redux: Call Return (value)
+    Redux-&gt;&gt;Bus: GetNounQueryResponse
+</code></pre>
+
+<h3 id="event">Event</h3>
+
+<pre><code class="language-mermaid">sequenceDiagram
+    participant Bus
+    participant Redux
+    participant Wechaty
+
+    Wechaty-&gt;&gt;Redux: ReceivedEvent
+    Redux-&gt;&gt;Bus: ReceivedEvent
+</code></pre>
+
+<h2 id="api-reference">API Reference</h2>
+
+<p>Read CQRS Wechaty API Reference at: <a href="https://paka.dev/npm/wechaty-cqrs">https://paka.dev/npm/wechaty-cqrs</a></p>
+
+<h2 id="blogs">Blogs</h2>
+
+<ul>
+  <li><a href="https://wechaty.js.org/2022/02/27/refactoring-friday-bot-with-nestjs-ddd-cqrs/">Refactoring Friday BOT with NestJS, Domain-driven Design (DDD), and CQRS, @huan, Feb 27, 2022</a></li>
+</ul>
+
+<h2 id="resources">Resources</h2>
+
+<ul>
+  <li><a href="https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice#layers-in-ddd-microservices">Layers in DDD microservices</a></li>
+  <li>Effective Aggregate Design
+    <ul>
+      <li><a href="https://www.dddcommunity.org/wp-content/uploads/files/pdf_articles/Vernon_2011_1.pdf">Part I: Modeling a Single Aggregate</a></li>
+      <li><a href="https://www.dddcommunity.org/wp-content/uploads/files/pdf_articles/Vernon_2011_2.pdf">Part II: Making Aggregates Work Together</a></li>
+      <li><a href="https://www.dddcommunity.org/wp-content/uploads/files/pdf_articles/Vernon_2011_3.pdf">Part III: Gining Insight Through Discovery</a></li>
+    </ul>
+  </li>
+  <li><a href="https://badia-kharroubi.gitbooks.io/microservices-architecture/content/patterns/tactical-patterns/domain-application-infrastructure-services-pattern.html">Domain-Application-Infrastructure Services pattern</a></li>
+</ul>]]></content><author><name>huan</name></author><category term="announcement" /><category term="news" /><category term="cqrs" /><category term="ddd" /><category term="event-driven" /><summary type="html"><![CDATA[Command Query Responsibility Segregation (CQRS) is a software architecture pattern that separates the command(write) and query(read) layers. — CQRS, Martin Fowler, 14 July 2011]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/03-event-driven-wechaty-cqrs/cqrs-wechaty.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/03-event-driven-wechaty-cqrs/cqrs-wechaty.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Puppet-Whatsapp 1.0 Released!</title><link href="https://wechaty.js.org/2022/03/14/puppet-whatsapp-1.0-released/" rel="alternate" type="text/html" title="Puppet-Whatsapp 1.0 Released!" /><published>2022-03-14T00:00:00+00:00</published><updated>2022-03-14T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/03/14/puppet-whatsapp-1.0-released</id><content type="html" xml:base="https://wechaty.js.org/2022/03/14/puppet-whatsapp-1.0-released/"><![CDATA[<p><a href="https://github.com/wechaty/puppet-whstsapp"><code class="language-plaintext highlighter-rouge">Puppet-Whatsapp</code></a> has been published for more than a year, <a href="/2021/02/15/publishment-of-wechaty-whatsapp-puppet/">announcement here</a>, and it was still in alpha stage with only login and text message supported. Recently <a href="https://juzibot.com">Juzi.bot</a> was planning to support whatsapp in the web application, so we started working on the project.</p>
+
+<p><a href="https://tech-blog.juzibot.com/zh/puppet-whatsapp-1.0-released">中文版</a></p>
+
+<h2 id="primary-goals">Primary Goals</h2>
+
+<p><strong><em>Make puppet-whatsapp to be enterprise beta ready</em></strong></p>
+
+<p>To achieve this goal, <a href="https://juzibot.com">Juzi.bot</a> worked from below aspects:</p>
+
+<ul>
+  <li>improve code structure</li>
+  <li>improve stability</li>
+  <li>improve functionality</li>
+</ul>
+
+<h2 id="improve-code-structure">Improve code structure</h2>
+
+<p>Code structure is also related to the application structure. Before we started, we looked into the code, and found that all the main code logic are written into a huge class called <code class="language-plaintext highlighter-rouge">PuppetWhatsapp</code>. This is okay for an alpha stage puppet, but the scalability and flexibility will be limited by the structure. To make sure we have an enterprise beta ready puppet, we need to have a better foundation. Based on the experience working on other puppets, we extract below components from the huge class:</p>
+
+<ul>
+  <li><a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/whatsapp/whatsapp-manager.ts"><code class="language-plaintext highlighter-rouge">WhatsappManager</code></a>: in charge of everything that connects to <code class="language-plaintext highlighter-rouge">whatsapp-web.js</code></li>
+  <li><a href="https://github.com/wechaty/puppet-whatsapp/tree/main/src/puppet-mixin">‘mixins’</a>: separate implementation of different entities’ into different mixins</li>
+</ul>
+
+<p>Besides, we also added a new manager layer to the <code class="language-plaintext highlighter-rouge">PuppetWhatsapp</code>. With a new <code class="language-plaintext highlighter-rouge">PuppetManager</code>, we are able to make the <code class="language-plaintext highlighter-rouge">PuppetWhatsapp</code> class with least logic, and most code are pretty short and easy to read.</p>
+
+<h2 id="improve-stability">Improve stability</h2>
+
+<p>Stability is really important for an enterprise ready puppet.</p>
+
+<h3 id="login-session">Login Session</h3>
+
+<p>The first step for stability project of a puppet is always keep the login session. Two advantage with an persistent login session:</p>
+
+<ol>
+  <li>easier for develop phase, since restart application won’t require a new scan login</li>
+  <li>easier to maintain stability, when we encounter an unknown state that causes application hangs or crashes, we could confidently restart the application and automatically re-login, recover the application with minor down time</li>
+</ol>
+
+<p>So we spent a lot of time working on the login session. We’ve also found some issues in <code class="language-plaintext highlighter-rouge">whatsapp-web.js</code> project. To make sure we could finish <code class="language-plaintext highlighter-rouge">PuppetWhatsapp</code> within a reasonable time, we decide to fork the <code class="language-plaintext highlighter-rouge">whatsapp-web.js</code> and fix the problem, then raise PRs to <code class="language-plaintext highlighter-rouge">whatsapp-web.js</code> project.</p>
+
+<h3 id="request-control">Request Control</h3>
+
+<p><code class="language-plaintext highlighter-rouge">whatsapp-web.js</code> is using the <code class="language-plaintext highlighter-rouge">puppeteer</code> to control the whatsapp web application, so the api calling rate and amount needs to be considered, if we are making requests too frequent, the <code class="language-plaintext highlighter-rouge">puppeteer</code> might crash, if we are making too many requests, we might trigger the risk control mechanism of whatsapp. So request control is another key point to ensure stability.</p>
+
+<p>To control the request sent to whatsapp application, there are two different ways, both are important:</p>
+
+<ol>
+  <li>programmatically limit the request rate</li>
+  <li>use cache to reduce the get requests to whatsapp</li>
+</ol>
+
+<h4 id="request-manager">Request Manager</h4>
+
+<p>We created a new class called <a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/request/request-manager.ts"><code class="language-plaintext highlighter-rouge">RequestManager</code></a> to handle all request related stuff, and within the <code class="language-plaintext highlighter-rouge">RequestManager</code>, we added another component called <a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/request/rate-manager.ts"><code class="language-plaintext highlighter-rouge">RateManager</code></a>, with <code class="language-plaintext highlighter-rouge">RateManager</code>, we are able to control the request rate separately for different apis, and also it provides a queue mechanism, so we can control the request rate better. For detailed code changes, please refer to <a href="https://github.com/wechaty/puppet-whatsapp/pull/279">this PR</a></p>
+
+<h4 id="cache-manager">Cache Manager</h4>
+
+<p>We created a new class called <a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/data/cache-manager.ts'"><code class="language-plaintext highlighter-rouge">CacheManager</code></a> to manager different caches. We use <a href="https://github.com/huan/flash-store"><code class="language-plaintext highlighter-rouge">flash-store</code></a> as the underlying data persistent library, which is actually an old friend of puppets.</p>
+
+<p>With <code class="language-plaintext highlighter-rouge">CacheManager</code>, requests to get same contact or room will be served by cache, from previous experience, this will significant reduce the get requests to IMs.</p>
+
+<h2 id="improve-functionality">Improve functionality</h2>
+
+<p>The alpha version only supports login and text messages, which is too basic for an enterprise ready puppet. So we started to add more features to the <code class="language-plaintext highlighter-rouge">Puppet-Whatsapp</code>.</p>
+
+<p>Refer to new Wechaty 1.0 mixin design, we decide to also use mixins to implement the new functions. We’ve added 7 mixins</p>
+
+<ul>
+  <li><a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/puppet-mixin/contact-self.ts">contact-self</a></li>
+  <li><a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/puppet-mixin/contact.ts">contact</a></li>
+  <li><a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/puppet-mixin/conversation.ts">conversation</a></li>
+  <li><a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/puppet-mixin/friendship.ts">friendship</a></li>
+  <li><a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/puppet-mixin/message.ts">message</a></li>
+  <li><a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/puppet-mixin/room.ts">room</a></li>
+  <li><a href="https://github.com/wechaty/puppet-whatsapp/blob/9d9db5d308e253d92dae085f32e9b4ffea6fac3f/src/puppet-mixin/tag.ts">tag</a></li>
+</ul>
+
+<p>Some of the mixin has only un-implemented methods, but they are placeholders for future implementations.</p>
+
+<h2 id="thanks-to">Thanks To</h2>
+
+<p>With all works described above, we’ve glad to announce the <code class="language-plaintext highlighter-rouge">Puppet-Whatsapp</code> 1.0 are launched!</p>
+
+<p><img src="/assets/2022/03-puppet-whatsapp-1.0-released/launched.webp" alt="Open Source Win" /></p>
+
+<p>Thanks to developers contributing to the project</p>
+
+<ul>
+  <li><a href="https://github.com/su-chang">SuperChang</a></li>
+  <li><a href="https://github.com/hcfw007">NickWang</a></li>
+  <li><a href="https://github.com/bung87">Bung</a></li>
+  <li><a href="https://github.com/wedreamer">述不作</a></li>
+  <li><a href="https://github.com/guo40020">Kelly</a></li>
+</ul>
+
+<p><img src="/assets/2022/03-puppet-whatsapp-1.0-released/kickoff.webp" alt="Open Source Win" /></p>
+
+<h3 id="new-puppetwhatsapp-maintainers">New PuppetWhatsapp Maintainers</h3>
+
+<p>To award the excellent contribution to <code class="language-plaintext highlighter-rouge">Puppet-Whatsapp</code>, author of Wechaty, <a href="https://github.com/huan">Huan</a>, announced two new <code class="language-plaintext highlighter-rouge">Puppet-Whatsapp</code> maintainers, they are <a href="https://github.com/su-chang">SuperChang</a> and <a href="https://github.com/hcfw007">NickWang</a>. And a Github T-shirt, a bag of Github stickers and a Github brooch were given as the maintainer gifts. Additionally, to reward <a href="https://github.com/su-chang">SuperChang</a>’s continuous contribution to Wechaty, a special edition Github cup was rewarded.</p>
+
+<p><img src="/assets/2022/03-puppet-whatsapp-1.0-released/maintainer.webp" alt="Open Source Win" /></p>
+
+<h2 id="reference">Reference</h2>
+
+<p>Code base: <a href="https://github.com/wechaty/puppet-whatsapp">https://github.com/wechaty/puppet-whatsapp</a>
+Main Issue: <a href="https://github.com/wechaty/puppet-whatsapp/issues/263">https://github.com/wechaty/puppet-whatsapp/issues/263</a></p>]]></content><author><name>windmemory</name></author><category term="announcement" /><category term="news" /><category term="open-source" /><category term="puppet" /><summary type="html"><![CDATA[Puppet-Whatsapp has been published for more than a year, announcement here, and it was still in alpha stage with only login and text message supported. Recently Juzi.bot was planning to support whatsapp in the web application, so we started working on the project.]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/03-puppet-whatsapp-1.0-released/logo.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/03-puppet-whatsapp-1.0-released/logo.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">中国开源超级码力榜权威发布 | Wechaty 创始人排名 TOP 7</title><link href="https://wechaty.js.org/2022/03/03/opensource-win-github-ranking-huan-007/" rel="alternate" type="text/html" title="中国开源超级码力榜权威发布 | Wechaty 创始人排名 TOP 7" /><published>2022-03-03T00:00:00+00:00</published><updated>2022-03-03T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/03/03/opensource-win-github-ranking-huan-007</id><content type="html" xml:base="https://wechaty.js.org/2022/03/03/opensource-win-github-ranking-huan-007/"><![CDATA[<p>“开源”是 2021 中国技术发展的年度热词，越来越多人关注开源、贡献开源。然而，谈到中国的开源盛况，却有人提出了不同的观点：</p>
+
+<ul>
+  <li>开源布道师李建盛老师（适兕）曾在一次专访中表示 <a href="https://mp.weixin.qq.com/s/YJN7wYX6kk9ZhHkP66zHZA">“真实的开源世界依旧冷清”</a>，鼓励大家“要到开源真正发生的地方里去。”
+我们也收到了不少社区开发者的反馈 —— 热闹的背后，究竟有多少来自中国的开发者在贡献代码？如何能帮助在开源社区中贡献代码的开发者们也被更多人认识？</li>
+  <li>在和一众开源老友的讨论后，SegmentFault 思否计划联合开源社、腾源会、X-Lab 实验室发起一个全新的、专属于开源开发者的榜单 —— 中国开源码力榜，通过 GitHub 开发者协作影响力进行排名、评选。</li>
+</ul>
+
+<p>来自 X-Lab 的 OpenDigger 团队对 GitHub 开放的归档日志进行分析，筛选出了 2021 全年 GitHub 协作影响力排名前 10,000 的账号，并号召了社区中数十位开发者及十余家合作社区，通过开放式协作共同核实标注信息、排除机器人账号，第一阶段甄选出了 99 位中国开发者。</p>
+
+<h2 id="码不停蹄赢">码不停蹄，赢！</h2>
+
+<p><img src="/assets/2022/03-opensource-win-github-ranking-huan-007/winners.webp" alt="Open Source Win" /></p>
+
+<p>他们在为这些项目贡献（排名不分先后）</p>
+
+<blockquote>
+  <p>Azure, KubeSphere, Ant Design, Flutter, Hyperf, Swoole, Apache SkyWalking, Apache Airflow, RT-Thread,Apache APISIX, DeepModeling, vant, PyO3, DolphinScheduer, Kubernetes, TiDB, TiKV, Engula, Apache Echarts, OpenResty, PaddlePaddle, Apache Dubbo, MobX, Deepin, Wechaty, TDengine, Apache Camel, ice, AntVis, Apache IoTDB, Aapche EventMesh (Incubating), ClickHouse, Apache InLong (Incubating)</p>
+</blockquote>
+
+<ul>
+  <li>访问<a href="https://opensource.win/">项目官网</a>了解上榜开发者项目贡献详情</li>
+</ul>
+
+<h2 id="wechaty-创始人名列前茅">Wechaty 创始人名列前茅</h2>
+
+<p>Wechaty 创始人 <a href="https://opensource.win/huan">Huan(李卓桓)</a> 排名全球 TOP 450 ，中国 TOP 7 ：</p>
+
+<p><a href="https://opensource.win/huan"><img src="/assets/2022/03-opensource-win-github-ranking-huan-007/opensource-win-huan.webp" alt="Wechaty Huan" /></a></p>
+
+<h2 id="关于中国开源码力榜">关于中国开源码力榜</h2>
+
+<p>中国开源码力榜是由 SegmentFault 思否、开源社、腾源会、X-lab 实验室共同发起的中国开源开发者榜单。</p>
+
+<p>来自 X-lab 的 OpenDigger 团队对 GitHub 开放的归档日志进行分析，筛选出了 2021 全年 GitHub 协作影响力排名前 10,000 的账号，并号召了社区中数十位开发者及十余家合作社区，通过开放式协作共同核实标注信息、排除机器人账号，第一阶段选出了 99 位中国开发者。</p>
+
+<p>榜单发布后，我们收到社区反馈，新增了一位符合标准的来自中国的“开源码丽”Huan (李卓桓)，也请开源世界的每一位开发者通过 Github 项目地址能积极的向我们反馈，我们会不间断的进行更新。</p>
+
+<p>通过中国开源码力榜，我们希望开源世界的超级码丽、开源项目背后的开发者们可以被更多人知道、认识和 respect。让更多人关注开源、关注开源开发者成长。</p>
+
+<ul>
+  <li>项目地址：<a href="https://github.com/OpenSourceWin">https://github.com/OpenSourceWin</a></li>
+  <li>项目官网：<a href="http://opensource.win/">http://opensource.win/</a></li>
+</ul>
+
+<h2 id="评选标准">评选标准</h2>
+
+<ol>
+  <li>开发者影响力基于 GitHub 全域开发者活跃数据计算得到。</li>
+  <li>影响力计算使用了开发者与项目之间的活动关联与图算法计算获得。</li>
+  <li>计算影响力的基本主张为：更有影响力的开发者在 GitHub 上更加活跃、更有影响力的开发者更倾向于参与到更有影响力的项目中、更有影响力的项目会吸引到更多更有影响力的开发者参与。</li>
+  <li>第一阶段开源码力榜收录来自中国的协作影响力排名 Top 99 位的开发者，开发者归属地主要依据其 GitHub 上公开的地理位置信息及志愿者手工标注辨别，如有错漏欢迎来 GitHub 向我们反馈。</li>
+</ol>
+
+<p>项目地址：<a href="https://github.com/OpenSourceWin">https://github.com/OpenSourceWin</a></p>
+
+<h2 id="合作伙伴">合作伙伴</h2>
+
+<p><img src="/assets/2022/03-opensource-win-github-ranking-huan-007/cover.webp" alt="Open Source Wechaty" /></p>
+
+<p><img src="/assets/2022/03-opensource-win-github-ranking-huan-007/brands.webp" alt="brands" /></p>
+
+<blockquote>
+  <p>Source: <a href="https://segmentfault.com/a/1190000041478447">来自开源世界的超级码丽，中国开源码力榜权威发布, SegmentFault思否, Mar 1, 2022</a></p>
+</blockquote>]]></content><author><name>huan</name></author><category term="announcement" /><category term="news" /><category term="open-source" /><summary type="html"><![CDATA[“开源”是 2021 中国技术发展的年度热词，越来越多人关注开源、贡献开源。然而，谈到中国的开源盛况，却有人提出了不同的观点：]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/03-opensource-win-github-ranking-huan-007/opensource-super-mario.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/03-opensource-win-github-ranking-huan-007/opensource-super-mario.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Refactoring Friday BOT with NestJS, Domain-driven Design (DDD), and CQRS</title><link href="https://wechaty.js.org/2022/02/27/refactoring-friday-bot-with-nestjs-ddd-cqrs/" rel="alternate" type="text/html" title="Refactoring Friday BOT with NestJS, Domain-driven Design (DDD), and CQRS" /><published>2022-02-27T00:00:00+00:00</published><updated>2022-02-27T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/02/27/refactoring-friday-bot-with-nestjs-ddd-cqrs</id><content type="html" xml:base="https://wechaty.js.org/2022/02/27/refactoring-friday-bot-with-nestjs-ddd-cqrs/"><![CDATA[<p>Friday BOT has been refactored to using <a href="https://nestjs.com/">NestJS</a> framework, by following the <a href="https://medium.com/raa-labs/part-1-domain-driven-design-like-a-pro-f9e78d081f10">Domain-driven Design</a> (DDD) and the <a href="https://www.sderosiaux.com/articles/2019/08/29/cqrs-why-and-all-the-things-to-consider/">Command Query Responsibility Segregation</a> (CQRS) this week, by merging this HUGE(307 files changed) <a href="https://github.com/wechaty/friday/pull/112">Pull Request</a>:</p>
+
+<p><a href="https://github.com/wechaty/friday/pull/112"><img src="/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/friday-pr-112.webp" alt="Friday BOT PR 112" /></a></p>
+
+<h2 id="background">Background</h2>
+
+<p>For a long time, I’m planning to build Wechaty bot with an Event-Driven Architecture (EDA). The first EDA cloud service for Wechaty I have designed is the Wechaty token discovery service 5 years ago, it helps Wechaty instances to discover each other by their token, and make remote calls to each other by JSON-RPC payload, via a center WebSocket server provided by the community.</p>
+
+<p>The most beautiful part of the EDA is that it can decouple the sub-systems, and make the system more flexible and scalable. In the past 5 years, I’ve built a lot of EDA services, like <a href="https://github.com/Chatie/io">@chatie/io server</a> and <a href="https://github.com/wechaty/wechaty/blob/main/src/io.ts">wechaty/io-client</a>, I’ve learned a lot of things from them.</p>
+
+<p>Besides the EDA, we are doing our best to make the Wechaty API to be concise and easy to be understand and use, by using the most intuitive names for all the APIs. We built a plugin layer based on the basic APIs, and the plugin layer successfully helps the Wechaty to be more flexible and scalable.</p>
+
+<h2 id="the-friday-bot">The Friday BOT</h2>
+
+<p><a href="https://github.com/wechaty/friday">Friday BOT</a> is a Wechaty bot, which is in charge of help us to manage the community. It has lots of features, for example, the most basic features are automatically accept new friend requests, sending them a welcome message, and sending them a invitation to join the community chat room.</p>
+
+<p>Some of more advanced features are:</p>
+
+<ol>
+  <li>Forward messages across the 20+ different chat rooms on multiple Instant Messaging (IM) platforms, current includes 10+ WeChat groups, one <a href="https://gitter.im/wechaty/wechaty">Gitter channel</a>, one QQ group, one WhatsApp group, with 3600+ developers.</li>
+  <li>Recognize the message with different languages like English and Chinese, and forward the message to the right chat room.</li>
+  <li>Help the <a href="https://bot5.ml">BOT5 Club</a> to organize the seminar and meetup, in the WeChat room, with the power of the <a href="https://github.com/wechaty/bot5-assistant">bot5-assistant</a> plugin.</li>
+  <li>Answer the FAQ in the chat room, with the power of the Azure Congnitive Service <a href="https://github.com/wechaty/plugin-qnamaker">QnAMaker plugin</a>.</li>
+  <li>Update the <a href="https://chatie.statuspage.io/">chatie statuspage</a> to record the the community status.</li>
+  <li>Provide a <a href="https://github.com/wechaty/vorpal-contrib#4-mathmaster">Math Master Game</a> powered by the <a href="https://github.com/wechaty/vorpal">Wechaty Vorpal pugin</a></li>
+  <li>Connect the Freshdesk &amp; Intercom tickets to the Wechaty, with the power of the <a href="https://github.com/wechaty/plugin-freshdesk">Freshdesk plugin</a> and <a href="https://github.com/wechaty/plugin-intercom">Intercom plugin</a>.</li>
+  <li>Provide a <a href="https://github.com/gcaufy/wechaty-voteout">Voting to Kickout plugin</a> to kickout the bad guys in the community, by counting the thumb-down votes from the community.</li>
+  <li>and more …</li>
+</ol>
+
+<p>With Friday BOT get more and more features, the code base is growing, and the community is growing.</p>
+
+<h2 id="domain-driven-design-ddd">Domain-driven Design (DDD)</h2>
+
+<p><img src="/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/domain-driven-design-easily-explained.webp" alt="Domain-driven Design easily explained" /></p>
+
+<blockquote>
+  <p>Image source: <a href="https://www.knowis.com/blog/domain-driven-design-structured-modeling-of-complex-software-systems-in-banking">DOMAIN-DRIVEN DESIGN: STRUCTURED MODELING OF COMPLEX SOFTWARE SYSTEMS IN BANKING</a></p>
+</blockquote>
+
+<p>Domain Driven Design (DDD) is about mapping business domain concepts into software artifacts.</p>
+
+<blockquote>
+  <p>— <a href="https://www.infoq.com/articles/ddd-in-practice/">InfoQ</a></p>
+</blockquote>
+
+<p>In my understanding, the soul of DDD is a bridge to connect the business people with the software engineers, and make sure they are in the same page and talking about the same things, efficiently.</p>
+
+<p>Some useful resources:</p>
+
+<ul>
+  <li><a href="https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice">Design a DDD-oriented microservice</a></li>
+  <li><a href="https://github.com/ddd-crew/ddd-starter-modelling-process">Domain-Driven Design Starter Modelling Process</a></li>
+  <li><a href="https://khalilstemmler.com/articles/enterprise-typescript-nodejs/application-layer-use-cases/">Better Software Design with Application Layer Use Cases</a></li>
+  <li><a href="http://galudisu.info/2018/12/21/pattern/ddd/event-sourcing-feedback/">关于Akka在事件溯源的若干思考</a></li>
+</ul>
+
+<h2 id="event-storming">Event Storming</h2>
+
+<p><img src="/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/event-storming.webp" alt="Event-storming" /></p>
+
+<blockquote>
+  <p>Source: <a href="https://virtualddd.com/learning-ddd/ddd-crew-eventstorming-glossary-cheat-sheet">EventStorming Glossary &amp; Cheat sheet</a></p>
+</blockquote>
+
+<p><a href="https://en.wikipedia.org/wiki/Event_storming">Event Storming</a> is a sprint workshop for a group of both business and engineer people who, together, to analyze the business domain by drawning events flows.</p>
+
+<h2 id="command-query-responsibility-segregation-cqrs">Command Query Responsibility Segregation (CQRS)</h2>
+
+<p><img src="/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/cqrs.webp" alt="CQRS" /></p>
+
+<blockquote>
+  <p>Source: <a href="https://smartlabsblog.wordpress.com/2015/09/06/introduction-to-cqrs-and-event-sourcing-part-1/">Introduction to CQRS and Event Sourcing</a></p>
+</blockquote>
+
+<p><a href="https://martinfowler.com/bliki/CQRS.html">Command Query Responsibility Segregation (CQRS)</a> is a software architecture pattern that separates the command(write) and query(read) layers.</p>
+
+<h2 id="nestjs">NestJS</h2>
+
+<p><img src="/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/nestjs.webp" alt="NestJS" /></p>
+
+<blockquote>
+  <p>Nest (<a href="https://nestjs.com/">NestJS</a>) is a framework for building efficient, scalable Node.js server-side applications. It uses progressive TypeScript and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).</p>
+
+  <p>Nest provides an out-of-the-box application architecture which allows developers and teams to create highly testable, scalable, loosely coupled, and easily maintainable applications. The architecture is heavily inspired by Angular.</p>
+</blockquote>
+
+<p>It has <a href="https://docs.nestjs.com/controllers">Controlers</a> to handle the HTTP requests, <a href="https://docs.nestjs.com/providers">Providers</a> to be injected as dependency (Inversify of Control, IOC), and <a href="https://docs.nestjs.com/recipes/cqrs">CQRS</a> which works out-of-the-box.</p>
+
+<h2 id="the-new-architecture-of-friday-bot">The New Architecture of Friday BOT</h2>
+
+<p>With Friday BOT version 1.13+ and the new architecture, we have modulized the system into a few modules, and we have a lot of features to support the new architecture.</p>
+
+<h3 id="ddd-perspective">DDD Perspective</h3>
+
+<ol>
+  <li>Repository: provide the <code class="language-plaintext highlighter-rouge">WeChat</code>, <code class="language-plaintext highlighter-rouge">WhatsApp</code>, <code class="language-plaintext highlighter-rouge">QQ</code>, <code class="language-plaintext highlighter-rouge">Gitter</code>, <code class="language-plaintext highlighter-rouge">OfficialAccount</code>, and <code class="language-plaintext highlighter-rouge">WXWork</code> Wechaty instances.</li>
+  <li>Model/AggregateRoot: each Wechaty instance is treated as a model/aggregate root.</li>
+  <li>Commands &amp; Queries &amp; Events: they are defined to support the business logic, and they are the core of the system.</li>
+</ol>
+
+<h4 id="domain-saga-event-to-command">Domain Saga: Event to Command</h4>
+
+<pre><code class="language-mermaid">graph LR
+  classDef event fill:DarkGoldenRod
+  classDef command fill:blue
+  classDef query fill:green
+
+  ME(PuppetMessageReceivedEvent):::event
+  GTE[fab:fa-gitter GitterCommunityMessageReceivedEvent]:::event
+  WCE[fab:fa-weixin WeChatCommunityMessageReceivedEvent]:::event
+  WAE[fab:fa-whatsapp WhatsAppCommunityMessageReceivedEvent]:::event
+  QQE[fab:fa-qq QQCommunityMessageReceivedEvent]:::event
+
+  WAC[fab:fa-whatsapp WhatsAppCommunitySendMessageCommand]:::command
+  QQC[fab:fa-qq QQCommunitySendMessageCommand]:::command
+  WCC[fab:fa-weixin WeChatCommunitySendMessageCommand]:::command
+  GTC[fab:fa-gitter GitterCommunitySendMessageCommand]:::command
+
+  S{Saga}
+  GTS{fab:fa-gitter}
+  WCS{fab:fa-weixin}
+  WAS{fab:fa-whatsapp}
+  QQS{fab:fa-qq}
+
+  ME==&gt;S
+
+  subgraph Events Saga
+    S--&gt;GTE
+    S--&gt;WCE
+    S--&gt;QQE
+    S--&gt;WAE
+  end
+
+  subgraph Commands Saga
+    GTE--&gt;GTS
+    GTS--&gt;WAC
+    GTS--&gt;QQC
+    GTS--&gt;WCC
+    
+    WCE--&gt;WCS
+    WCS--&gt;WAC
+    WCS--&gt;QQC
+    WCS--&gt;GTC
+    
+    WAE--&gt;WAS
+    WAS--&gt;GTC
+    WAS--&gt;QQC
+    WAS--&gt;WCC
+
+    QQE--&gt;QQS
+    QQS--&gt;WAC
+    QQS--&gt;GTC
+    QQS--&gt;WCC
+  end
+</code></pre>
+
+<h4 id="text-message">Text Message</h4>
+
+<pre><code class="language-mermaid">graph LR
+  subgraph Community Send Message Command Saga
+    classDef event fill:DarkGoldenRod
+    classDef command fill:blue
+    classDef query fill:green
+
+    CSC[CommunitySendTextMessageCommand]:::command
+    SMC_S[fa:fa-signature SendMessageCommand Signature + Text]:::command
+    
+    TNQ[GetTalkerNameQuery]:::query
+    CNQ[GetChannelNameQuery]:::query
+
+    CSC--&gt;CNQ &amp; TNQ
+    CNQ &amp; TNQ --&gt; SMC_S
+  end
+</code></pre>
+
+<h4 id="non-text-message">Non-text Message</h4>
+
+<pre><code class="language-mermaid">graph LR
+  subgraph Community Send Message Command Saga
+    classDef event fill:DarkGoldenRod
+    classDef command fill:blue
+    classDef query fill:green
+
+    CSC[CommunitySendMessageCommand]:::command
+    SMC_S[fa:fa-signature SendMessageCommand Signature]:::command
+    SMC_N[fa:fa-photo-film SendMessageCommand Non-text]:::command
+    
+    TNQ[GetTalkerNameQuery]:::query
+    CNQ[GetChannelNameQuery]:::query
+
+    CSC--&gt;CNQ &amp; TNQ
+    CNQ &amp; TNQ --&gt; SMC_S
+    CSC--&gt;SMC_N
+  end
+</code></pre>
+
+<h4 id="application--domain">Application &amp; Domain</h4>
+
+<pre><code class="language-mermaid">sequenceDiagram
+    participant User
+    participant Application
+    participant Domain
+    User-&gt;&gt;Application: original message
+    Application-&gt;&gt;Domain: PuppetMessageReceivedEvent
+    Domain-&gt;&gt;Domain: XXXCommunityMessageReceivedEvent
+    Domain-&gt;&gt;Domain: XXXCommunitySendMessageCommand
+    Domain-&gt;&gt;Application: XXXQuery
+    Application-&gt;&gt;Domain: 
+    Domain-&gt;&gt;Application: PuppetSendMessageCommand
+    Application-&gt;&gt;User: forwarded message
+</code></pre>
+
+<h3 id="lays--dependencies-in-ddd">Lays &amp; Dependencies in DDD</h3>
+
+<blockquote>
+  <p>Most enterprise applications with significant business and technical complexity are defined by multiple layers. The layers are a logical artifact, and are not related to the deployment of the service. They exist to help developers manage the complexity in the code. Different layers (like the domain model layer versus the presentation layer, etc.) might have different types, which mandate translations between those types.</p>
+</blockquote>
+
+<p><img src="/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/domain-driven-design-microservice.webp" alt="DDD Layers" /></p>
+
+<ol>
+  <li>Domain Layer: Responsible for representing concepts of the business, information about the business situation, and business rules. S</li>
+  <li>Application Layer: Defines the jobs the software is supposed to do and directs the expressive domain objects to work out problems.</li>
+  <li>Infrastructure Layer: How the data that is initially held in domain entities (in memory) is persisted in databases or another persistent store.</li>
+</ol>
+
+<p>Dependencies:</p>
+
+<p><img src="/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/ddd-service-layer-dependencies.webp" alt="Dependencies between Layers in DDD" /></p>
+
+<blockquote>
+  <p>Source: <a href="https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice">Design a DDD-oriented microservice, Microsoft Docs</a></p>
+</blockquote>
+
+<h3 id="nestjs-perspective">NestJS Perspective</h3>
+
+<p><img src="/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/ioc.webp" alt="Dependency Injection" /></p>
+
+<blockquote>
+  <p><a href="https://devopedia.org/dependency-injection">Devopedia. 2022. “Dependency Injection.” Version 5, February 15. Accessed 2022-02-15.</a></p>
+</blockquote>
+
+<ol>
+  <li>Controller: The controller is the entry point of the HTTP sub-system.</li>
+  <li>Application: 3rd party APIs.</li>
+  <li>Core: business logics, such as <code class="language-plaintext highlighter-rouge">statuspage</code> and <code class="language-plaintext highlighter-rouge">sync-community-rooms</code></li>
+  <li>Infrastructure: low-level supporting services, such as <code class="language-plaintext highlighter-rouge">EnvVar</code>, <code class="language-plaintext highlighter-rouge">finis</code>, etc.</li>
+  <li>WechatyEvents: the Event-driven architecture of Wechaty, such as <code class="language-plaintext highlighter-rouge">PuppetMessageReceivedEvent</code>, <code class="language-plaintext highlighter-rouge">PuppetMessageSentEvent</code>, etc.</li>
+  <li>WechatyRepository: provide the Wechaty instances.</li>
+  <li>WechatySettings: provide the settings from pre-defined properties and environment variables.</li>
+  <li>FridayModule: main module of Friday BOT, where the whole system is assembled.</li>
+  <li>Sagas: using RxJS to convert <code class="language-plaintext highlighter-rouge">Event</code> to <code class="language-plaintext highlighter-rouge">Command</code>s</li>
+  <li>Unit test: using <code class="language-plaintext highlighter-rouge">marble</code> to test the event streaming system</li>
+</ol>
+
+<p>All the above modules are in the <code class="language-plaintext highlighter-rouge">src/</code> folder, they are working under the Inverse of Control (IOC) pattern powered by NestJS.</p>
+
+<h2 id="to-do-list">To-do List</h2>
+
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" checked="checked" />Design the <a href="https://github.com/wechaty/cqrs">CQRS system for Wechaty</a>, and publish it as <a href="https://npmjs.com/package/wechaty-cqrs">wechaty-cqrs</a> NPM module.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Finish the Event-Driven Architecture (EDA) module for Wechaty, and publish it as <code class="language-plaintext highlighter-rouge">wechaty-actor</code> NPM module.</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Publish a NestJS module <code class="language-plaintext highlighter-rouge">wechaty-nest</code> for easily integrating the <code class="language-plaintext highlighter-rouge">wechaty-actor</code> NPM module to NestJS</li>
+</ul>
+
+<h2 id="source-code">Source Code</h2>
+
+<p>The source code of Friday BOT is available on <a href="https://github.com/wechaty/friday">GitHub</a></p>
+
+<p>You can <a href="https://gitter.im/wechaty/wechaty">join our Gitter</a> network if you aren’t already a member.</p>]]></content><author><name>huan</name></author><category term="announcement" /><category term="news" /><category term="ddd" /><category term="cqrs" /><category term="friday" /><category term="nestjs" /><summary type="html"><![CDATA[Friday BOT has been refactored to using NestJS framework, by following the Domain-driven Design (DDD) and the Command Query Responsibility Segregation (CQRS) this week, by merging this HUGE(307 files changed) Pull Request:]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/event-storming-people.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/02-refactoring-friday-bot-with-nestjs-ddd-cqrs/event-storming-people.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">Wechaty community meetup: PadLocal Office Hour, @padlocal, Feb 5th, 2022</title><link href="https://wechaty.js.org/2022/02/22/padlocal-office-hour/" rel="alternate" type="text/html" title="Wechaty community meetup: PadLocal Office Hour, @padlocal, Feb 5th, 2022" /><published>2022-02-22T00:00:00+00:00</published><updated>2022-02-22T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/02/22/padlocal-office-hour</id><content type="html" xml:base="https://wechaty.js.org/2022/02/22/padlocal-office-hour/"><![CDATA[<p>2月5日，周六，社区在线上举办了一个 <a href="https://github.com/wechaty/puppet-padlocal">Padlocal</a> 专题的视频会议，由 Padlocal 的作者 <code class="language-plaintext highlighter-rouge">@Haoda</code> 讲解了 Padlocal 的起源与技术架构，并对 Padlocal 的一些 issues 进行了回复。</p>
+
+<blockquote>
+  <p><a href="https://github.com/wechaty/puppet-padlocal">Padlocal</a> 是 Wechaty 社区中一个非常重要且成功的商业化 puppet，它提供了稳定接入个人微信的方案，是个非常棒的项目。</p>
+</blockquote>
+
+<p><strong>本篇文章是基于视频会议回放整理出来的内容</strong>，视频会议回放如下：</p>
+
+<div style="
+    position: relative;
+    padding-bottom: 56.25%;
+    padding-top:30px;
+    height:0;
+    overflow:hidden;
+">
+  <iframe src="https://www.youtube.com/embed/2tYcrFaWTZQ" allowfullscreen="" webkitallowfullscreen="" frameborder="0" style="
+      position: absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+    ">
+</iframe>
+
+</div>
+
+<h2 id="与会者介绍">与会者介绍</h2>
+
+<p><a href="https://github.com/huan">@huan</a>, <a href="https://wechaty.js.org/contributors/huan">Huan LI</a>, Creator of Wechaty, Tencent TVP of Chatbot</p>
+
+<p><a href="https://github.com/lijiarui">@lijiarui</a>: Full stack developer, serial entrepreneur, Founder &amp; CEO of JuziBot</p>
+
+<p><a href="https://github.com/padlocal">@Haoda</a>, Author of PadLocal</p>
+
+<p><a href="https://github.com/osindex">@Osindex</a>, Contributor of Wechaty, A lazy full stack developer. 使用 wechaty 开发了 <a href="https://wechaty.js.org/2020/06/06/wechaty-game-bot/">谁是卧底小游戏</a></p>
+
+<p><a href="#tbd">@Hongye</a>, user of Wechaty</p>
+
+<p><a href="#tbd">@Snow Wang</a>, Contributor of Python Wechaty</p>
+
+<p><a href="#tbd">@Yi Zhihang</a>, Contributor of Wechaty</p>
+
+<p><a href="#tbd">Su Chang</a>, Contributor of Wechaty, 句子互动高级工程师</p>
+
+<p><a href="#tbd">KDB</a>, user of Wechaty</p>
+
+<p><a href="#tbd">Liu Siyao</a>, Contributor of Wechaty</p>
+
+<h2 id="个人分享环节">个人分享环节</h2>
+
+<h3 id="李佳芮">李佳芮</h3>
+
+<p>近期关注：</p>
+
+<ul>
+  <li>WhatsApp 的 puppet</li>
+</ul>
+
+<h3 id="卓桓">卓桓</h3>
+
+<p>近期关注：</p>
+
+<ul>
+  <li>特别努力的把 <code class="language-plaintext highlighter-rouge">Friday bot</code> 推动到 DDD 领域 (<code class="language-plaintext highlighter-rouge">Domain Driven Design</code> 即 <code class="language-plaintext highlighter-rouge">领域驱动设计</code>)，它最关键的是把商业业务逻辑和代码划分的比较清楚。</li>
+  <li>把 wechaty 向消息驱动方向做些尝试。使用的模式是 <code class="language-plaintext highlighter-rouge">CQRS</code> 即 <code class="language-plaintext highlighter-rouge">读写分离</code>，可见 <a href="https://github.com/wechaty/friday/pull/112">Friday bot 的 pr #112</a></li>
+</ul>
+
+<h3 id="好大">好大</h3>
+
+<p>现在日常主要是在维护 Padlocal 的状况。</p>
+
+<ul>
+  <li>虽然大家能在 Github 上看到 <a href="https://github.com/wechaty/puppet-padlocal">Padlocal</a> 几个月没更新了，但其实在背后的代码都在维护着。大家在使用中，没有遇到什么状况，这就是好事。</li>
+  <li>今天主要是回答大家使用中的一些疑惑，分享关于 wechaty、puppet、padlocal 的一些实现的东西。例如逆向、微信协议相关的内容，有疑问都可以提问。</li>
+</ul>
+
+<h3 id="osindex">Osindex</h3>
+
+<p>一个默默无闻的 Contributor。</p>
+
+<ul>
+  <li>想了解 @Haoda 对于 Padlocal 协议的一些想法和过程。一开始怎么想到逆向解析协议，使用了哪些工具、资源，如何实现为 puppet 的。</li>
+</ul>
+
+<h3 id="hongye">Hongye</h3>
+
+<p>现在在英国读 Master of Science in Artificial Intelligence，使用偏功能性，在探索使用 wechaty 的落地工作。</p>
+
+<h3 id="snow-wang">Snow Wang</h3>
+
+<p>Padlocal 的受益者，通过使用 padlocal 获得了一些持续收益。</p>
+
+<p>使用 Padlocal 向许多个群内发送关于美团 CPS（<code class="language-plaintext highlighter-rouge">Cost Per Sales</code> 即 按销售量计费） 广告的小程序，每个月能入账几千块钱，天天躺赚。</p>
+
+<p>项目实际运作中，感受到 Padlocal <strong>特别稳定</strong>，几个月可能才掉一次。</p>
+
+<h3 id="yi-zhihang">Yi Zhihang</h3>
+
+<p>借助 Padlocal 编写过一个小项目(<a href="https://wechaty.js.org/2022/01/16/wechaty-assistant-bot-opensource/">基于Wechaty的个人助理，++生活效率&amp;&amp;有效对抗内卷</a>)，作为普通用户来参加会议。</p>
+
+<h3 id="su-chang">Su Chang</h3>
+
+<p>参与过很多 puppet 的编写，近期在做企业微信和 WhatsApp 相关的开发。</p>
+
+<blockquote>
+  <p>之前在社区中的马甲叫做 <code class="language-plaintext highlighter-rouge">百年</code>。</p>
+</blockquote>
+
+<h3 id="kdb">KDB</h3>
+
+<p>近期和 @Hongye 在研究中接触到 Wechaty，抱着学习的心态来参会。</p>
+
+<h3 id="liu-siyao">Liu Siyao</h3>
+
+<p>很早就接触到聊天机器人，在微软夏令营接触到QQ机器人，后来做微信机器人。</p>
+
+<p>因为发现在微软用的 LUIS 和做 QQ 机器人时用的工具函数，在 Wechaty 这边没有，用起来不方便，就贡献了一个插件。</p>
+
+<p>当前在字节跳动做机器人平台相关的工程研发，同时也在上美国那边一个 Master 的网课。</p>
+
+<h2 id="padlocal-faq-meetup">Padlocal FAQ Meetup</h2>
+
+<p>主要是介绍 Padlocal 底层运作的一些机制，来帮助用户来理解和解决开发中的问题。</p>
+
+<div style="
+    position: relative;
+    padding-bottom: 56.25%;
+    padding-top:30px;
+    height:0;
+    overflow:hidden;
+">
+  <iframe src="https://www.youtube.com/embed/2tYcrFaWTZQ?t=1975" allowfullscreen="" webkitallowfullscreen="" frameborder="0" style="
+      position: absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+    ">
+</iframe>
+
+</div>
+
+<p>主要讲三块：</p>
+
+<ul>
+  <li>Reverse Engineering</li>
+  <li>Inside Wechaty</li>
+  <li>Padlocal Design (Robust and high efficient architecture)</li>
+</ul>
+
+<p>另外就是<strong>关于安全性</strong>的一些问题。</p>
+
+<h3 id="padlocal-的缘起">Padlocal 的缘起</h3>
+
+<p>之前的公司是做社群分销的工作，而微信是很重要的一个渠道，就是要做一个机器人这样的东西。</p>
+
+<p>当时先从网上搜到的就是 Wechaty 协议，用了一些 Wechaty 的 puppet，也付费用了一些第三方的接入。但是第三方的多少存在一些问题，主要是两方面：</p>
+
+<ol>
+  <li>第三方不是很稳定，比如隔一段时间需要重新登陆，就很头疼，想着是否有其他方式去做。</li>
+  <li>社区里的 puppet 有一定生命周期，当时用了半年左右，后来又换了其他 puppet。</li>
+</ol>
+
+<p>作为一个商业项目，希望最好还是有一个稳定的，而且自己也需要懂一些这方面的知识。但当时也没想自己做一套完整实现，从头写一个完整的puppet这样，因为也估计到里边的困难和工作量会非常大，只是想了解里边的东西，来协助我们去解决业务上的问题。后来摊子铺开了，越来越大，慢慢的就把协议做了出来，又实现了 wechaty 的 puppet。做出来之后，就想到这个东西给大家用，是不是更好，就到了现在的状态。</p>
+
+<h3 id="逆向工程">逆向工程</h3>
+
+<p>Padlocal 是模拟 Ipad 的协议，最开始是把协议弄清楚，就要掌握逆向工程相关的知识。</p>
+
+<p>用的比较多的工具：</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">IDA</code> 逆向工程工具，很贵，最后还是付费了</li>
+  <li><code class="language-plaintext highlighter-rouge">WireShark</code> 抓包工具</li>
+  <li><code class="language-plaintext highlighter-rouge">Checkra1n</code> IOS 上越狱的工具</li>
+  <li><code class="language-plaintext highlighter-rouge">LLDB</code> 调试工具</li>
+  <li><code class="language-plaintext highlighter-rouge">voltron</code> 调试工具</li>
+  <li><code class="language-plaintext highlighter-rouge">Cydia Substrate</code> 反编译工具。用来对程序内部进行 hook，分析协议会比较方便一些</li>
+  <li><code class="language-plaintext highlighter-rouge">theos</code> 反编译工具。用来对程序内部进行 hook，分析协议会比较方便一些</li>
+</ul>
+
+<h4 id="代码混淆">代码混淆</h4>
+
+<p>微信对内部比较深的代码做了混淆，来保护它的代码。如果你想去解决这个问题，我觉得需要一些耐心，也需要这方面相关的积累。</p>
+
+<p>当前主流代码混淆有以下三种方式：</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Control Flow Flattening</code> 控制流平坦化</li>
+  <li><code class="language-plaintext highlighter-rouge">Bogus Control Flow</code> 虚假控制流，插入乱序的控制流</li>
+  <li><code class="language-plaintext highlighter-rouge">Instructions Substitution</code> 指令替换</li>
+</ul>
+
+<p>我感觉微信里边很像 <a href="http://o-llvm.org">o-llvm</a> 的理念，甚至我猜测有可能他们的混淆工具是在 <code class="language-plaintext highlighter-rouge">o-llvm</code> 的基础上改了些东西，因为它混淆出的代码和 o-llvm 的理念很相似。</p>
+
+<h5 id="控制流平坦化">控制流平坦化</h5>
+
+<p>视频时间点： <a href="https://youtu.be/2tYcrFaWTZQ?t=2372">https://youtu.be/2tYcrFaWTZQ?t=2372</a></p>
+
+<p>关于控制流平坦化，有一篇很好的论文，提到了这个，对我的帮助非常大。感兴趣的同学可以去看看：</p>
+
+<blockquote>
+  <p>OBFUSCATING C++ PROGRAMS VIA CONTROL FLOW FLATTENING
+Annales Univ. Sci. Budapest., Sect. Comp. 30 (2009) 3-19
+<a href="http://ac.inf.elte.hu/Vol_030_2009/003.pdf">http://ac.inf.elte.hu/Vol_030_2009/003.pdf</a></p>
+</blockquote>
+
+<ul>
+  <li>TODO: <a href="https://youtu.be/2tYcrFaWTZQ?t=2388">https://youtu.be/2tYcrFaWTZQ?t=2388</a></li>
+</ul>]]></content><author><name>binsee</name></author><category term="talk" /><category term="puppet-padlocal" /><category term="ipad" /><category term="meetup" /><summary type="html"><![CDATA[2月5日，周六，社区在线上举办了一个 Padlocal 专题的视频会议，由 Padlocal 的作者 @Haoda 讲解了 Padlocal 的起源与技术架构，并对 Padlocal 的一些 issues 进行了回复。]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/02-padlocal-office-hour/icon.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/02-padlocal-office-hour/icon.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">2022寒假-王天睿-JuziBot项目开发-期中报告-智能信息助理</title><link href="https://wechaty.js.org/2022/02/17/second-intern-juzibot-report/" rel="alternate" type="text/html" title="2022寒假-王天睿-JuziBot项目开发-期中报告-智能信息助理" /><published>2022-02-17T00:00:00+00:00</published><updated>2022-02-17T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/02/17/second-intern-juzibot-report</id><content type="html" xml:base="https://wechaty.js.org/2022/02/17/second-intern-juzibot-report/"><![CDATA[<h2 id="期中报告">期中报告</h2>
+
+<h3 id="项目参与人">项目参与人</h3>
+
+<ul>
+  <li>导师：段清华</li>
+  <li>学生：王天睿</li>
+</ul>
+
+<h3 id="项目计划">项目计划</h3>
+
+<ol>
+  <li>01/13-01/17 : 成功运行dingdong bot，运行juzibot 初步了解juzibot 模块 并学习nodejs</li>
+  <li>01/18-01/25 : 开始根据现有功能书写测试用例，同时深入了解juzibot对应模块功能</li>
+  <li>01/26-02/11 : 现有功能的完善与测试用例的持续编写</li>
+  <li>02/12-02/22 : 抓取的微信问答信息，并完成数据清洗</li>
+  <li>02/23-02/27 : 开发句子秒回对应问答机器人,完成微信问答的api接入句子秒回</li>
+</ol>
+
+<h3 id="项目进度">项目进度</h3>
+
+<ul>
+  <li>测试模块编写
+    <ul>
+      <li>文字向量服务 ✅</li>
+      <li>语音转文字服务 ✅</li>
+      <li>标签功能测试 ✅</li>
+      <li>意图测试  ✅</li>
+      <li>删除测试  ✅</li>
+      <li>文件测试  ✅</li>
+      <li>文件删除测试  ✅</li>
+      <li>关键字测试 ✅</li>
+      <li>我的文件测试 ✅</li>
+      <li>重启测试 ✅</li>
+    </ul>
+  </li>
+  <li>小橘子🍊接口编写
+    <ul>
+      <li>利用 SentenceTransformers 编写 句子-&gt;向量 API 替换 CPM ✅</li>
+      <li>测试框架 并完成编写 语音-&gt;文字 服务 API ✅</li>
+      <li>编写上述 API 测试代码并完成 docker 封装 ✅</li>
+    </ul>
+  </li>
+  <li>数据爬取
+    <ul>
+      <li>微信广告帮助中心 ✅</li>
+      <li>腾讯广告帮助中心 ✅</li>
+      <li>企业微信帮助中心 ✅</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="相关链接">相关链接</h4>
+
+<ul>
+  <li><a href="https://github.com/deepdialog/easy_asr">自动语音识别</a></li>
+  <li><a href="https://github.com/deepdialog/easy_sts">句子转向量</a></li>
+  <li><a href="https://github.com/tianrking/dont_ban_me/tree/master/app/1%E5%BE%AE%E4%BF%A1%E5%B9%BF%E5%91%8A%E5%B8%AE%E5%8A%A9%E4%B8%AD%E5%BF%83/awesome_version">微信广告数据</a></li>
+  <li><a href="https://github.com/tianrking/dont_ban_me/tree/master/app/2%E8%85%BE%E8%AE%AF%E5%B9%BF%E5%91%8A%E5%B8%AE%E5%8A%A9%E4%B8%AD%E5%BF%83">腾讯广告数据</a></li>
+  <li><a href="https://github.com/tianrking/dont_ban_me/tree/master/app/3%E4%BC%81%E4%B8%9A%E5%BE%AE%E4%BF%A1%E5%B8%AE%E5%8A%A9%E4%B8%AD%E5%BF%83/awesome_way">企业微信数据</a></li>
+</ul>
+
+<h3 id="遇到的问题及解决方案">遇到的问题及解决方案</h3>
+
+<h4 id="使用不熟悉的nodejs语言完成任务">使用不熟悉的nodejs语言完成任务</h4>
+
+<ul>
+  <li>遇到问题首先去积极的查阅资料，再进行多种尝试，然后询问老师，同时在解决问题后记录问题， 在此过程中学会并实现了相关编写，也提高了规范代码的意识，感谢老师的耐心帮助。</li>
+</ul>
+
+<h4 id="xiaojuzi-与-fastapi-交互">xiaojuzi 与 fastapi 交互</h4>
+
+<ul>
+  <li>
+    <p>怎样将 wechaty 接收到的 文字/图片/语音 与 fastapi 进行交互 ， 确保它的传输高效，可以恢复。我去尝试构建请求，又没有较好的接受工具用以确定是否发送了理想的数据。所以我不得不先从 fastapi 端编写开始, 通过多次尝试编写如下</p>
+
+    <p>python3</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">class</span> <span class="nc">Item_audio</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+      <span class="n">lol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+      <span class="n">audio_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+      <span class="n">audio_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+    
+  <span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="s">"/api/audio/"</span><span class="p">)</span>
+  <span class="k">async</span> <span class="k">def</span> <span class="nf">create_item</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Item_audio</span><span class="p">):</span>
+   
+  <span class="n">gg</span><span class="o">=</span><span class="n">item</span><span class="p">.</span><span class="n">audio_data</span><span class="p">.</span><span class="n">replace</span><span class="p">(</span><span class="s">"data:audio/silk;base64,"</span><span class="p">,</span><span class="s">""</span><span class="p">)</span>
+  <span class="n">audio_data</span> <span class="o">=</span> <span class="n">base64</span><span class="p">.</span><span class="n">b64decode</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">gg</span><span class="p">))</span>
+    
+</code></pre></div>    </div>
+
+    <p>nodejs</p>
+
+    <div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="kd">const</span> <span class="nx">audioFileBox</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">toFileBox</span><span class="p">()</span>
+      <span class="kd">const</span> <span class="nx">audio_dir</span> <span class="o">=</span> <span class="nx">audioFileBox</span><span class="p">.</span><span class="nx">name</span>
+      <span class="k">await</span> <span class="nx">audioFileBox</span><span class="p">.</span><span class="nx">toFile</span><span class="p">(</span><span class="nx">audioFileBox</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="kc">true</span><span class="p">)</span>
+      <span class="kd">const</span> <span class="nx">body</span> <span class="o">=</span> <span class="p">{</span>
+          <span class="na">audio_name</span><span class="p">:</span> <span class="nx">audioFileBox</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
+          <span class="na">audio_data</span><span class="p">:</span> <span class="dl">"</span><span class="s2">data:audio/silk;base64,</span><span class="dl">"</span> <span class="o">+</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="nx">audio_dir</span><span class="p">,</span> <span class="dl">'</span><span class="s1">base64</span><span class="dl">'</span><span class="p">)</span>
+      <span class="p">};</span>
+      <span class="kd">const</span> <span class="nx">response</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">fetch</span><span class="p">(</span><span class="nx">url</span> <span class="o">+</span> <span class="dl">'</span><span class="s1">/api/audio/</span><span class="dl">'</span><span class="p">,</span> <span class="p">{</span>
+          <span class="na">body</span><span class="p">:</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">body</span><span class="p">),</span>
+          <span class="na">method</span><span class="p">:</span> <span class="dl">'</span><span class="s1">post</span><span class="dl">'</span><span class="p">,</span>
+          <span class="na">headers</span><span class="p">:</span> <span class="p">{</span> <span class="dl">'</span><span class="s1">Content-Type</span><span class="dl">'</span><span class="p">:</span> <span class="dl">'</span><span class="s1">application/json</span><span class="dl">'</span> <span class="p">}</span>
+      <span class="p">});</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="编写一个透明的dockerfile-的小技巧">编写一个”透明”的Dockerfile 的小技巧</h4>
+
+<ul>
+  <li>
+    <p>编写 sts和asr api时候因为程序运行初次需要下载模型, 难以做到开箱即用，使用 COPY命令在dockerhub上显示一个不明文件移入 不够透明 容易给其他人使用造成困惑， 最后利用shell内的方式来实现</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  RUN <span class="o">(</span><span class="nb">echo</span> <span class="s2">"py code“） | python3 
+</span></code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="编写爬虫的过程">编写爬虫的过程</h4>
+
+<ul>
+  <li>
+    <p>在编写xiaojuzi的语音转文字模块时候，学会了 nodejs 下 fetch的使用， 也对 post/get 请求有了一定认识， 编写爬虫的时候 因为界面是由javascript渲染得到的无法之间request网址，也就无法完成解析。</p>
+  </li>
+  <li>
+    <p>起初我想用webscrapy插件抓取  但是效率很低 也不方便在没有GUI的vps上操作 还需要人点击显然不是理想的解决方案</p>
+  </li>
+  <li>
+    <p>查阅资料后我决定选用 selenium 框架来渲染网页 然后使用 beautifulsoup lxml 进行爬取和解析 虽然可以通过 “–headless” 方式 在vps上 运行 但是为了确保 selenium 可以完整加载完一个界面 我需要每次都加上进五秒等待时间 这样就会导致爬取时间过长 而且本身我并不知道需要具体的抓取那些url</p>
+
+    <p>selenium 配置</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="kn">from</span> <span class="nn">selenium</span> <span class="kn">import</span> <span class="n">webdriver</span>
+  <span class="kn">from</span> <span class="nn">selenium.webdriver.chrome.options</span> <span class="kn">import</span> <span class="n">Options</span>
+
+  <span class="n">options</span> <span class="o">=</span> <span class="n">Options</span><span class="p">()</span>
+  <span class="n">options</span><span class="p">.</span><span class="n">headless</span> <span class="o">=</span> <span class="bp">True</span>
+  <span class="n">options</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">"--window-size=1920x1080"</span><span class="p">)</span>
+  <span class="c1"># options.add_argument("window-size=1920x3000");
+</span>  <span class="n">options</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">"--disable-notifications"</span><span class="p">)</span>
+
+  <span class="n">options</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'--headless'</span><span class="p">)</span>
+  <span class="n">options</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'--disable-gpu'</span><span class="p">)</span><span class="c1">#谷歌文档提到需要加上这个属性避免使用gpu产生bug
+</span>    
+  <span class="n">options</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'disable-infobars'</span><span class="p">)</span><span class="c1">#隐藏"Chrome正在受到自动软件的控制"
+</span>  <span class="n">options</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'lang=zh_CN.UTF-8'</span><span class="p">)</span>      <span class="c1"># 设置中文
+</span>  <span class="n">options</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'window-size=1920x3000'</span><span class="p">)</span> <span class="c1"># 指定浏览器分辨率
+</span>  <span class="n">options</span><span class="p">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">'--hide-scrollbars'</span><span class="p">)</span>     <span class="c1"># 隐藏滚动条, 应对一些特殊页面
+</span>
+  <span class="n">driver</span> <span class="o">=</span> <span class="n">webdriver</span><span class="p">.</span><span class="n">Chrome</span><span class="p">(</span><span class="s">"/Users/mac/Desktop/chromedriver"</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
+</code></pre></div>    </div>
+
+    <p>抓取 并 初步提取数据</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="n">driver</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+  <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+  <span class="k">print</span><span class="p">(</span><span class="n">driver</span><span class="p">.</span><span class="n">title</span><span class="p">)</span>
+  <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">driver</span><span class="p">.</span><span class="n">page_source</span><span class="p">,</span> <span class="s">'lxml'</span><span class="p">)</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">soup</span><span class="p">.</span><span class="n">find_all</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s">'class'</span><span class="p">:</span> <span class="s">'guide__title'</span><span class="p">})):</span>            
+      <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">soup</span><span class="p">.</span><span class="n">find_all</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s">'class'</span><span class="p">:</span> <span class="s">'guide__title'</span><span class="p">})))</span>
+      <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">","</span><span class="p">)</span>
+      <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+      <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span>
+  <span class="n">f</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div>    </div>
+
+    <p>过程中可能会出现问题,这时候就可以打印 selenium 抓取时候的网页截图</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="n">driver</span><span class="p">.</span><span class="n">get_screenshot_as_file</span><span class="p">(</span><span class="s">'1.png'</span><span class="p">)</span>
+</code></pre></div>    </div>
+
+    <p>不稳定 ， 而且低效</p>
+  </li>
+  <li>
+    <p>爬虫的目的是抓取数据 既然难以渲染得到渲染界面 不如直接从数据请求分析的角度来寻找解决思路 ， 于是就决定尝试抓包寻找解决方案. 首先通过 抓包的到 post 到数据 构造 curl请求 测试是否可以的到正确的响应。</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+  curl <span class="s1">'https://open.work.weixin.qq.com/help2/getQusList?lang=zh_CN&amp;ajax=1&amp;f=json&amp;random=310321'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'authority: open.work.weixin.qq.com'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'sec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Microsoft Edge";v="98"'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'accept: application/json, text/plain, */*'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'content-type: application/json'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'sec-ch-ua-mobile: ?0'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36 Edg/98.0.1108.51'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'sec-ch-ua-platform: "macOS"'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'origin: https://open.work.weixin.qq.com'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'sec-fetch-site: same-origin'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'sec-fetch-mode: cors'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'sec-fetch-dest: empty'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'referer: https://open.work.weixin.qq.com/help2/pc/15405?person_id=1'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'accept-language: zh-TW,zh-CN;q=0.9,zh;q=0.8,en;q=0.7,en-GB;q=0.6,en-US;q=0.5,zh-HK;q=0.4'</span> <span class="se">\</span>
+      <span class="nt">-H</span> <span class="s1">'cookie: pgv_pvid=3686684000; pac_uid=0_3cbd911c9ce83; pgv_info=ssid=s2798911544; pgv_pvi=4654092288; pgv_si=s6420471808; wwrtx.ref=direct; wwrtx.c_gdpr=0; wwrtx.refid=413075501944711; __utma=114362329.896737070.1644833346.1644833346.1644833346.1; __utmc=114362329; __utmz=114362329.1644833346.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); Hm_lvt_f2ba645ba13636ba52b0234381f51cbc=1644833347; Hm_lpvt_f2ba645ba13636ba52b0234381f51cbc=1644833970; uin=o0508195902; skey=@sEUq3VJWl; RK=hA9xBYtEcN; ptcz=f4917937db9babf5c19203049471a3e4d45ea1fe7b770ef9ea93e47e33c0c0f5; wwrtx.i18n_lan=cht'</span> <span class="se">\</span>
+      <span class="nt">--data-raw</span> <span class="s1">'{"person_id":1,"doc_id":15405}'</span> <span class="se">\</span>
+      <span class="nt">--compressed</span>
+</code></pre></div>    </div>
+
+    <p>这是比较杂乱复杂的，我尝试给它简化 删去对于获取数据而言不必要的部分，的到下面的方法</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c">#https://open.work.weixin.qq.com/help2/getQusList?lang=zh_CN&amp;ajax=1&amp;f=json&amp;random=569866 这个是浏览器访问的网址 下面是实际的请求</span>
+  curl <span class="s1">'https://open.work.weixin.qq.com/help2/getQusList?lang=zh_CN&amp;ajax=1&amp;f=json&amp;random=310321'</span> <span class="se">\</span>
+  <span class="nt">-H</span> <span class="s1">'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36 Edg/98.0.1108.51'</span> <span class="se">\</span>
+  <span class="nt">-H</span> <span class="s1">'referer: https://open.work.weixin.qq.com/help2/pc/15405?person_id=1'</span> <span class="se">\</span>
+  <span class="nt">--data-raw</span> <span class="s1">'{"person_id":1,"doc_id":15405}'</span> 
+</code></pre></div>    </div>
+
+    <p>为了确保可靠性， curl复制粘贴非常方便， 在另一台vps上也进行了测试，的确可以的到正确的数据返回，下面就是把它转换成 requests 的请求 融入到代码里。</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  headers <span class="o">=</span> <span class="o">{</span>
+  <span class="s1">'user-agent'</span>: <span class="s1">'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36 Edg/98.0.1108.51'</span>,
+  <span class="s1">'referer'</span>: <span class="s1">'https://open.work.weixin.qq.com/help2/pc/15405?person_id=1'</span>,
+  <span class="o">}</span>
+
+  params <span class="o">=</span> <span class="o">(</span>
+      <span class="o">(</span><span class="s1">'lang'</span>, <span class="s1">'zh_CN'</span><span class="o">)</span>,
+      <span class="o">(</span><span class="s1">'ajax'</span>, <span class="s1">'1'</span><span class="o">)</span>,
+      <span class="o">(</span><span class="s1">'f'</span>, <span class="s1">'json'</span><span class="o">)</span>,
+      <span class="o">(</span><span class="s1">'random'</span>, <span class="s1">'310321'</span><span class="o">)</span>,
+  <span class="o">)</span>
+
+  data <span class="o">=</span> <span class="s1">'{"person_id":1,"doc_id":15405}'</span>
+</code></pre></div>    </div>
+
+    <p>此时就可以很清晰的看到请求的结构，大概率可以猜到 要么这个 random 是个假的 random 实际上是做文件索引的， 要么它是个真的random 做防止爬虫检测用，而我们要的对应文档存储就为 doc_id 。 通过脚本测试一下，很快就确定了 doc_id 对应的真的是doc 而random也是真的随机 😂😂😂😂😂 于是 我们可以在最简的基础上再反加回之前的参数 作用是伪装的更真实 防止被ban 得到下边最终构造代码</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="kn">import</span> <span class="nn">requests</span>
+  <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="s">'authority'</span><span class="p">:</span> <span class="s">'open.work.weixin.qq.com'</span><span class="p">,</span>
+      <span class="s">'sec-ch-ua'</span><span class="p">:</span> <span class="s">'" Not A;Brand";v="99", "Chromium";v="98", "Microsoft Edge";v="98"'</span><span class="p">,</span>
+      <span class="s">'accept'</span><span class="p">:</span> <span class="s">'application/json, text/plain, */*'</span><span class="p">,</span>
+      <span class="s">'content-type'</span><span class="p">:</span> <span class="s">'application/json'</span><span class="p">,</span>
+      <span class="s">'sec-ch-ua-mobile'</span><span class="p">:</span> <span class="s">'?0'</span><span class="p">,</span>
+      <span class="s">'user-agent'</span><span class="p">:</span> <span class="s">'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36 Edg/98.0.1108.51'</span><span class="p">,</span>
+      <span class="s">'sec-ch-ua-platform'</span><span class="p">:</span> <span class="s">'"macOS"'</span><span class="p">,</span>
+      <span class="s">'origin'</span><span class="p">:</span> <span class="s">'https://open.work.weixin.qq.com'</span><span class="p">,</span>
+      <span class="s">'sec-fetch-site'</span><span class="p">:</span> <span class="s">'same-origin'</span><span class="p">,</span>
+      <span class="s">'sec-fetch-mode'</span><span class="p">:</span> <span class="s">'cors'</span><span class="p">,</span>
+      <span class="s">'sec-fetch-dest'</span><span class="p">:</span> <span class="s">'empty'</span><span class="p">,</span>
+      <span class="s">'referer'</span><span class="p">:</span> <span class="s">'https://open.work.weixin.qq.com/help2/pc/15405?person_id=1'</span><span class="p">,</span>
+      <span class="s">'accept-language'</span><span class="p">:</span> <span class="s">'zh-TW,zh-CN;q=0.9,zh;q=0.8,en;q=0.7,en-GB;q=0.6,en-US;q=0.5,zh-HK;q=0.4'</span><span class="p">,</span>
+      <span class="s">'cookie'</span><span class="p">:</span> <span class="s">'pgv_pvid=3686684000; pac_uid=0_3cbd911c9ce83; pgv_info=ssid=s2798911544; pgv_pvi=4654092288; pgv_si=s6420471808; wwrtx.ref=direct; wwrtx.c_gdpr=0; wwrtx.refid=413075501944711; __utma=114362329.896737070.1644833346.1644833346.1644833346.1; __utmc=114362329; __utmz=114362329.1644833346.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); Hm_lvt_f2ba645ba13636ba52b0234381f51cbc=1644833347; Hm_lpvt_f2ba645ba13636ba52b0234381f51cbc=1644833970; uin=o0508195902; skey=@sEUq3VJWl; RK=hA9xBYtEcN; ptcz=f4917937db9babf5c19203049471a3e4d45ea1fe7b770ef9ea93e47e33c0c0f5; wwrtx.i18n_lan=cht'</span><span class="p">,</span>
+  <span class="p">}</span>
+
+  <span class="n">params</span> <span class="o">=</span> <span class="p">(</span>
+      <span class="p">(</span><span class="s">'lang'</span><span class="p">,</span> <span class="s">'zh_CN'</span><span class="p">),</span>
+      <span class="p">(</span><span class="s">'ajax'</span><span class="p">,</span> <span class="s">'1'</span><span class="p">),</span>
+      <span class="p">(</span><span class="s">'f'</span><span class="p">,</span> <span class="s">'json'</span><span class="p">),</span>
+      <span class="p">(</span><span class="s">'random'</span><span class="p">,</span> <span class="s">'22340'</span><span class="p">),</span>
+  <span class="p">)</span>
+
+  <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">begin</span><span class="p">,</span><span class="n">end</span><span class="p">):</span>
+      <span class="c1">## num 编号为主文档对应序号
+</span>      <span class="n">data</span> <span class="o">=</span> <span class="s">'{"person_id":1,"doc_id":%s}'</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+
+      <span class="n">res</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">post</span><span class="p">(</span><span class="s">'https://open.work.weixin.qq.com/help2/getQusList'</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+
+</code></pre></div>    </div>
+
+    <p>这样就可以很方便的遍历了，但是 我们不知道到底哪些URL才有我们想要的信息，于是就需要进行暴力遍历， 这时候 python 的异常处理模块变得非常适用 ，我们可以判断 是否返回值正常 若异常直接请求下一个即可， 然后将正确的数据利用pandas直接整理成csv</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>      <span class="k">try</span><span class="p">:</span>
+          <span class="n">Q</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s">'data'</span><span class="p">][</span><span class="s">'helpdocument'</span><span class="p">][</span><span class="s">'qusList'</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">'title'</span><span class="p">]</span>
+          <span class="n">A_md</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s">'data'</span><span class="p">][</span><span class="s">'helpdocument'</span><span class="p">][</span><span class="s">'qusList'</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">'content_md'</span><span class="p">]</span>
+          <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">[</span>
+                  <span class="p">[</span><span class="n">Q</span><span class="p">,</span><span class="n">A_md</span><span class="p">]],</span>
+                  <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">'Q'</span><span class="p">,</span><span class="s">'A'</span><span class="p">],</span>
+                  <span class="p">)</span>
+          <span class="n">df</span><span class="p">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s">'data_all_in_one/QA_7k.csv'</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">'a'</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            
+      <span class="k">except</span><span class="p">:</span>
+          <span class="k">continue</span>
+</code></pre></div>    </div>
+
+    <p>此时 基本的部分已经完成， 但是逐个遍历速度还是太慢 于是融入了多线程</p>
+
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">request_api</span><span class="p">(</span><span class="n">T_name</span><span class="p">,</span><span class="n">begin</span><span class="p">,</span><span class="n">end</span><span class="p">):</span>
+      <span class="n">xxx</span>
+  <span class="k">try</span><span class="p">:</span>
+      <span class="n">begin</span> <span class="o">=</span> <span class="mi">13000</span>
+      <span class="c1"># 15000-16000 1k  # 16000-17000 2k # 17000-18000 3k # 18000-19000 4k
+</span>      <span class="c1"># 19000-20000 5k # 14000-15000 6k $ 13000-14000 7k
+</span>      <span class="n">end</span> <span class="o">=</span> <span class="mi">14000</span>
+      <span class="nb">sum</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">begin</span>
+      <span class="n">step</span> <span class="o">=</span> <span class="mi">4</span>
+      <span class="n">time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">sum</span> <span class="o">/</span> <span class="n">step</span><span class="p">)</span>
+
+      <span class="c1">## 这里可以循环 但是没必要 
+</span>      <span class="n">_thread</span><span class="p">.</span><span class="n">start_new_thread</span><span class="p">(</span><span class="n">request_api</span><span class="p">,</span> <span class="p">(</span><span class="s">"Thread-1"</span><span class="p">,</span> <span class="mi">0</span><span class="o">+</span><span class="n">begin</span> <span class="p">,</span> <span class="n">begin</span><span class="o">+</span><span class="n">time</span><span class="p">)</span> <span class="p">)</span>
+      <span class="n">_thread</span><span class="p">.</span><span class="n">start_new_thread</span><span class="p">(</span><span class="n">request_api</span><span class="p">,</span> <span class="p">(</span><span class="s">"Thread-2"</span><span class="p">,</span> <span class="n">begin</span> <span class="o">+</span> <span class="n">time</span> <span class="p">,</span> <span class="n">begin</span> <span class="o">+</span> <span class="n">time</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+      <span class="n">_thread</span><span class="p">.</span><span class="n">start_new_thread</span><span class="p">(</span><span class="n">request_api</span><span class="p">,</span> <span class="p">(</span><span class="s">"Thread-3"</span><span class="p">,</span> <span class="n">begin</span> <span class="o">+</span> <span class="n">time</span><span class="o">*</span><span class="mi">2</span> <span class="p">,</span> <span class="n">begin</span> <span class="o">+</span> <span class="n">time</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span> 
+      <span class="n">_thread</span><span class="p">.</span><span class="n">start_new_thread</span><span class="p">(</span><span class="n">request_api</span><span class="p">,</span> <span class="p">(</span><span class="s">"Thread-4"</span><span class="p">,</span> <span class="n">begin</span> <span class="o">+</span> <span class="n">time</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span>  <span class="n">begin</span> <span class="o">+</span> <span class="n">time</span><span class="o">*</span><span class="mi">4</span><span class="p">)</span> <span class="p">)</span>
+  <span class="k">except</span><span class="p">:</span>
+      <span class="k">print</span> <span class="p">(</span><span class="s">"Error: 无法启动线程"</span><span class="p">)</span>
+</code></pre></div>    </div>
+
+    <p>此时一个多线程的爬虫就实现了 ， 相比 selenium 方法 速度快了数十倍 ，数据干净的多， 而且代码非常简洁 使用时候修改 begin end 就可以啦。 长时间爬取容易被封，所以就没有给它做成全自动的。 爬去完数据 最好检测一下 csv。</p>
+
+    <p>分段爬取并整理成csv后 可以简单的用pandas再次清洗并合并的到最总数据</p>
+
+    <p>另外两个网站爬去的思路也是类似的，不同的是数据初步清洗的过程不一样，有趣的是，微信广告帮助中心 请求后直接下载包含所有信息的json 在浏览器里面访问时候转圈 显示出来后点击抓包 是无法抓取的 因为根本就没有 请求数据的请求 只有统计点击的请求 所有的数据都在加载时候下载完啦 所以只需要</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  url <span class="o">=</span> <span class="s1">'https://ad.weixin.qq.com/openapi/acms_files/get?filename=data'</span>
+  rec <span class="o">=</span> requests.get<span class="o">(</span>url<span class="o">)</span>
+  f <span class="o">=</span> open<span class="o">(</span><span class="s1">'data_all.txt'</span>,<span class="s1">'w'</span><span class="o">)</span>
+  f.write<span class="o">(</span>rec.text<span class="o">)</span>
+  f.close<span class="o">()</span>
+</code></pre></div>    </div>
+
+    <p>再用 json 提取 和 pandas 清洗就ok了</p>
+  </li>
+</ul>
+
+<h3 id="视频展示">视频展示</h3>
+
+<div style="
+    position: relative;
+    padding-bottom: 56.25%;
+    padding-top:30px;
+    height:0;
+    overflow:hidden;
+">
+  <iframe src="https://www.youtube.com/embed/TdCtdefyNm4" allowfullscreen="" webkitallowfullscreen="" frameborder="0" style="
+      position: absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+    ">
+</iframe>
+
+</div>
+
+<h3 id="答辩报告">答辩报告</h3>
+
+<div style="
+    position: relative;
+    padding-bottom: 56.25%;
+    padding-top:30px;
+    height:0;
+    overflow:hidden;
+">
+  <iframe src="/assets/js/viewer-js/#/assets/2022/02-second-intern-juzibot-report/w0x7ce_gg.pdf" allowfullscreen="" webkitallowfullscreen="" frameborder="0" style="
+      position: absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+    ">
+</iframe>
+
+</div>
+
+<h3 id="项目链接">项目链接</h3>
+
+<ul>
+  <li>
+    <p>项目链接：<a href="https://github.com/deepdialog/xiaojuzi">https://github.com/deepdialog/xiaojuzi</a></p>
+  </li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td>联系方式：Telegram: @qozob</td>
+          <td>Email: me@w0x7ce.eu</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+
+<blockquote>
+  <p>Author: <a href="https://github.com/tianrking">@tianrking</a>
+Code: <a href="https://github.com/tianrking/xiaojuzi">@tianrking/juzibot</a></p>
+</blockquote>]]></content><author><name>tianrking</name></author><category term="article" /><category term="juzibot" /><summary type="html"><![CDATA[期中报告]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/02-second-intern-juzibot-report/cover.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/02-second-intern-juzibot-report/cover.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry><entry><title type="html">2022-基于5G平台开发puppet模块接入wechaty</title><link href="https://wechaty.js.org/2022/02/17/wechaty-puppet-walnut-final-report/" rel="alternate" type="text/html" title="2022-基于5G平台开发puppet模块接入wechaty" /><published>2022-02-17T00:00:00+00:00</published><updated>2022-02-17T00:00:00+00:00</updated><id>https://wechaty.js.org/2022/02/17/wechaty-puppet-walnut-final-report</id><content type="html" xml:base="https://wechaty.js.org/2022/02/17/wechaty-puppet-walnut-final-report/"><![CDATA[<h2 id="基于-5g-平台开发-puppet-模块接入-wechaty">基于 5G 平台开发 puppet 模块接入 wechaty</h2>
+
+<ul>
+  <li>项目名称：基于5G消息的 Wechaty Puppet 模块的设计与实现</li>
+  <li>学生：鲍耀龙</li>
+  <li>导师：苏畅</li>
+  <li>项目介绍：<a href="https://github.com/juzibot/intern/issues/1">https://github.com/juzibot/intern/issues/1</a></li>
+  <li>代码地址：<a href="https://github.com/wechaty/puppet-walnut">https://github.com/wechaty/puppet-walnut</a></li>
+</ul>
+
+<h3 id="背景介绍">背景介绍</h3>
+
+<ul>
+  <li>Wechaty 社区目前已经支持微信、Whatsapp、企业微信、飞书等常见流行即时通讯工具，并且能够通过多语言 SDK （比如 Python Wechaty） 进行调用。</li>
+  <li><a href="https://wechaty.js.org/2021/03/27/rcs-messaging-chatbot/">5G Chatbot (RCS)</a> 是近期中国电信运营商基于 5G 的消息战略落地平台，未来的 5G 手机将会内置 RCS 消息的处理能力。</li>
+  <li><a href="https://www.5g-msg.com/#/">硬核桃社区</a> 的 <a href="https://wechaty.js.org/2021/03/27/rcs-messaging-chatbot/">电信运营商商5G Chatbot</a> 平台。</li>
+</ul>
+
+<h3 id="目标计划">目标计划</h3>
+
+<ul>
+  <li>基于 5G 平台的开放 api 进行封装，实现可以收发消息的机器人 bot。</li>
+  <li>丰富机器人的扩展性功能，完善对于 Wechaty 的 api 适配。</li>
+</ul>
+
+<h3 id="项目进展">项目进展</h3>
+
+<ul>
+  <li>基于 5G 平台的开放 api 进行封装，实现简单的<code class="language-plaintext highlighter-rouge">ding-dong-bot</code>。</li>
+  <li>丰富 5G 的消息模式，实现支持富文本、文件、css等多样消息格式的 puppet。</li>
+</ul>
+
+<h3 id="需求分析与设计">需求分析与设计</h3>
+
+<h4 id="1-wechaty与puppet的交互">1. <code class="language-plaintext highlighter-rouge">Wechaty</code>与<code class="language-plaintext highlighter-rouge">Puppet</code>的交互</h4>
+
+<p><img src="/assets/2022/02-wechaty-puppet-walnut-final-report/wechatypuppetwalnut.webp" alt="WechatyPuppetWalnut" /></p>
+
+<ul>
+  <li>开发者通过<code class="language-plaintext highlighter-rouge">Wechaty</code>提供的 Api 来进行具体的交互操作。</li>
+  <li><code class="language-plaintext highlighter-rouge">Wechaty</code>只需要具体调用<strong>开发者指定的<code class="language-plaintext highlighter-rouge">Puppet</code></strong>即此处的<code class="language-plaintext highlighter-rouge">Walnut</code>来实现开发者需要的逻辑。</li>
+  <li>我们的<code class="language-plaintext highlighter-rouge">Walnut</code>继承于抽象的<code class="language-plaintext highlighter-rouge">Puppet</code>父类，实现其预定义的抽象方法来实现具体的能力。</li>
+  <li>具体的<code class="language-plaintext highlighter-rouge">Walnut</code>会和<code class="language-plaintext highlighter-rouge">5G</code>平台进行数据交互从而实现真正的 ChatBot。</li>
+</ul>
+
+<h4 id="2-抽象方法的实现">2. 抽象方法的实现</h4>
+
+<p>在继承了抽象父类之后，我们就可以按照自己需要去实现具体的方法。</p>
+
+<ol>
+  <li>
+    <p>messageMixin: 消息相关的抽象方法</p>
+
+    <div class="language-ts highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">abstract</span> <span class="nx">messageContact</span>      <span class="p">(</span><span class="nx">messageId</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span>                       <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="kr">string</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageFile</span>         <span class="p">(</span><span class="nx">messageId</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span>                       <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">FileBoxInterface</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageImage</span>        <span class="p">(</span><span class="nx">messageId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">imageType</span><span class="p">:</span> <span class="nx">ImageType</span><span class="p">)</span> <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">FileBoxInterface</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageMiniProgram</span>  <span class="p">(</span><span class="nx">messageId</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span>                       <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">MiniProgramPayload</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageUrl</span>          <span class="p">(</span><span class="nx">messageId</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span>                       <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">UrlLinkPayload</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageLocation</span>     <span class="p">(</span><span class="nx">messageId</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span>                       <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">LocationPayload</span><span class="o">&gt;</span>
+   
+<span class="kd">abstract</span> <span class="nx">messageForward</span>         <span class="p">(</span><span class="nx">conversationId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">messageId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,)</span>                     <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span> <span class="o">|</span> <span class="kr">string</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageSendContact</span>     <span class="p">(</span><span class="nx">conversationId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">contactId</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span>                      <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span> <span class="o">|</span> <span class="kr">string</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageSendFile</span>        <span class="p">(</span><span class="nx">conversationId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">file</span><span class="p">:</span> <span class="nx">FileBoxInterface</span><span class="p">)</span>                 <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span> <span class="o">|</span> <span class="kr">string</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageSendMiniProgram</span> <span class="p">(</span><span class="nx">conversationId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">miniProgramPayload</span><span class="p">:</span> <span class="nx">MiniProgramPayload</span><span class="p">)</span> <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span> <span class="o">|</span> <span class="kr">string</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageSendText</span>        <span class="p">(</span><span class="nx">conversationId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">text</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">mentionIdList</span><span class="p">?:</span> <span class="kr">string</span><span class="p">[])</span> <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span> <span class="o">|</span> <span class="kr">string</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageSendUrl</span>         <span class="p">(</span><span class="nx">conversationId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">urlLinkPayload</span><span class="p">:</span> <span class="nx">UrlLinkPayload</span><span class="p">)</span>         <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span> <span class="o">|</span> <span class="kr">string</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">messageSendLocation</span>    <span class="p">(</span><span class="nx">conversationId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">locationPayload</span><span class="p">:</span> <span class="nx">LocationPayload</span><span class="p">)</span>       <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span> <span class="o">|</span> <span class="kr">string</span><span class="o">&gt;</span>
+   
+<span class="kd">abstract</span> <span class="nx">messageRecall</span> <span class="p">(</span><span class="nx">messageId</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span> <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">boolean</span><span class="o">&gt;</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>contactMixin: 联系人相关的抽象方法</p>
+
+    <div class="language-ts highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">abstract</span> <span class="nx">contactSelfName</span> <span class="p">(</span><span class="nx">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span>           <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactSelfQRCode</span> <span class="p">()</span>                     <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="kr">string</span> <span class="cm">/* QR Code Value */</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactSelfSignature</span> <span class="p">(</span><span class="nx">signature</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span> <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactAlias</span> <span class="p">(</span><span class="nx">contactId</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span>                       <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="kr">string</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactAlias</span> <span class="p">(</span><span class="nx">contactId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">alias</span><span class="p">:</span> <span class="kr">string</span> <span class="o">|</span> <span class="kc">null</span><span class="p">)</span> <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactAvatar</span> <span class="p">(</span><span class="nx">contactId</span><span class="p">:</span> <span class="kr">string</span><span class="p">)</span>                <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">FileBoxInterface</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactAvatar</span> <span class="p">(</span><span class="nx">contactId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">file</span><span class="p">:</span> <span class="nx">FileBoxInterface</span><span class="p">)</span> <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactPhone</span> <span class="p">(</span><span class="nx">contactId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">phoneList</span><span class="p">:</span> <span class="kr">string</span><span class="p">[])</span> <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactCorporationRemark</span> <span class="p">(</span><span class="nx">contactId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">corporationRemark</span><span class="p">:</span> <span class="kr">string</span> <span class="o">|</span> <span class="kc">null</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactDescription</span> <span class="p">(</span><span class="nx">contactId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">description</span><span class="p">:</span> <span class="kr">string</span> <span class="o">|</span> <span class="kc">null</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactList</span> <span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">[]</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactRawPayload</span> <span class="p">(</span><span class="nx">contactId</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="kr">any</span><span class="o">&gt;</span>
+<span class="kd">abstract</span> <span class="nx">contactRawPayloadParser</span> <span class="p">(</span><span class="nx">rawPayload</span><span class="p">:</span> <span class="kr">any</span><span class="p">)</span> <span class="p">:</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">ContactPayload</span><span class="o">&gt;</span>
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<h4 id="3-缓存模块">3. 缓存模块</h4>
+
+<ol>
+  <li>
+    <p>当我们的 sever 监听到有用户发送消息，此时我们就需要去对消息的具体内容做一个缓存。</p>
+
+    <p>这里我们需要自己实现一个缓存模块，将 message 的具体内容存储进去，并且返回 id。</p>
+
+    <blockquote>
+      <p>推荐李卓桓老师开发的缓存组件：<strong>flash-store</strong>。 <a href="https://github.com/huan/flash-store">https://github.com/huan/flash-store</a></p>
+    </blockquote>
+  </li>
+  <li>
+    <p>然后我们用 Puppet 触发一个 message 事件，把我们本地缓存的 id 传出去。</p>
+
+    <div class="language-ts highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="dl">'</span><span class="s1">message</span><span class="dl">'</span><span class="p">,</span> <span class="p">{</span> <span class="na">messageId</span><span class="p">:</span> <span class="nx">messageId</span> <span class="p">})</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>这时候 Wechaty 已经拿到我们消息的 id ，这个时候会根据一个需要我们实现的查询方法来获取本地缓存。</p>
+
+    <div class="language-ts highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">override</span> <span class="k">async</span> <span class="nx">messageRawPayload</span> <span class="p">(</span><span class="nx">messageId</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">WalnutMessagePayload</span> <span class="o">|</span> <span class="kc">undefined</span><span class="o">&gt;</span> <span class="p">{</span>
+  <span class="nx">log</span><span class="p">.</span><span class="nx">verbose</span><span class="p">(</span><span class="dl">'</span><span class="s1">PuppetWalnut</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">messageRawPayload(%s)</span><span class="dl">'</span><span class="p">,</span> <span class="nx">messageId</span><span class="p">)</span>
+  <span class="c1">// 这里根据 id 去缓存中查出来刚刚存入的消息</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>当查出具体的消息内容后，其实和我们 Wechaty 中预定义的消息结构可能不太一致，需要我们进行一个转换。</p>
+
+    <div class="language-ts highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">override</span> <span class="k">async</span> <span class="nx">messageRawPayloadParser</span> <span class="p">(</span><span class="nx">rawPayload</span><span class="p">:</span> <span class="nx">WalnutMessagePayload</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">PUPPET</span><span class="p">.</span><span class="nx">payloads</span><span class="p">.</span><span class="nx">Message</span><span class="o">&gt;</span> <span class="p">{</span>
+  <span class="c1">// 这里实现转换规则：WalnutMessagePayload ===&gt; PUPPET.payloads.Message</span>
+<span class="p">}</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>不过这里要注意，在每次进行收发消息的时候 Wechaty 都会去加载一遍我们的联系人缓存。
+所以对应的联系人缓存的模块也需要实现：</p>
+
+    <ul>
+      <li>contactRawPayloa</li>
+      <li>contactRawPayloadParser</li>
+    </ul>
+  </li>
+</ol>
+
+<h3 id="项目成果">项目成果</h3>
+
+<h4 id="1-contact-api-支持">1. Contact Api 支持</h4>
+
+<ul>
+  <li>
+    <h4 id="properties"><a href="https://wechaty.js.org/docs/api/contact#properties">Properties</a></h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Support</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>id</td>
+          <td><code class="language-plaintext highlighter-rouge">string</code></td>
+          <td>Get Contact id. This function is depending on the Puppet Implementation, see <a href="https://github.com/wechaty/wechaty/wiki/Puppet#3-puppet-compatible-table">puppet-compatible-table</a></td>
+          <td>✅</td>
+          <td>Phone number</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <h4 id="instance-methods"><a href="https://wechaty.js.org/docs/api/contact#instance-methods">Instance Methods</a></h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Instance Methods</th>
+          <th>Return type</th>
+          <th>Support</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>say(text Or Contact Or File)</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td>⚠Contact not Support</td>
+        </tr>
+        <tr>
+          <td>name()</td>
+          <td><code class="language-plaintext highlighter-rouge">String</code></td>
+          <td>✅</td>
+          <td>Phone number</td>
+        </tr>
+        <tr>
+          <td>alias(newAlias)</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>friend()</td>
+          <td><code class="language-plaintext highlighter-rouge">Boolean or null</code></td>
+          <td>✅</td>
+          <td>True</td>
+        </tr>
+        <tr>
+          <td>type()</td>
+          <td><code class="language-plaintext highlighter-rouge">ContactType.Unknown or ContactType.Personal or ContactType.Official</code></td>
+          <td>✅</td>
+          <td>ContactType.Personal</td>
+        </tr>
+        <tr>
+          <td>gender()</td>
+          <td><code class="language-plaintext highlighter-rouge">ContactGender.Unknown or ContactGender.Male or ContactGender.Female</code></td>
+          <td>✅</td>
+          <td>ContactGender.Unknown</td>
+        </tr>
+        <tr>
+          <td>province()</td>
+          <td><code class="language-plaintext highlighter-rouge">String or null</code></td>
+          <td>❌</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>city()</td>
+          <td><code class="language-plaintext highlighter-rouge">String or null</code></td>
+          <td>❌</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>avatar()</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td>Default avatar</td>
+        </tr>
+        <tr>
+          <td>sync()</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>self()</td>
+          <td><code class="language-plaintext highlighter-rouge">Boolean</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <blockquote>
+      <p>Default avatar 👉 <a href="https://raw.githubusercontent.com/wechaty/puppet-walnut/main/docs/images/avatar.webp">https://raw.githubusercontent.com/wechaty/puppet-walnut/main/docs/images/avatar.webp</a></p>
+    </blockquote>
+  </li>
+  <li>
+    <h4 id="static-methods"><a href="https://wechaty.js.org/docs/api/contact#static-methods">Static Methods</a></h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Static Methods</th>
+          <th>Return Type</th>
+          <th>Support</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>find(query)</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise &lt;Contact | null&gt;</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>findAll(Query Arguements)</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise &lt;Contact []&gt;</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+
+<h4 id="2-message-api-支持">2. Message Api 支持</h4>
+
+<ul>
+  <li>
+    <h4 id="instance-methods-1"><a href="https://wechaty.js.org/docs/api/message#instance-methods">Instance Methods</a></h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Instance methods</th>
+          <th>Return type</th>
+          <th>Support</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>from()</td>
+          <td><code class="language-plaintext highlighter-rouge">Contact</code> or <code class="language-plaintext highlighter-rouge">null</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>to()</td>
+          <td><code class="language-plaintext highlighter-rouge">Contact</code> or <code class="language-plaintext highlighter-rouge">null</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>room()</td>
+          <td><code class="language-plaintext highlighter-rouge">Room</code> or <code class="language-plaintext highlighter-rouge">null</code></td>
+          <td>✅</td>
+          <td>null</td>
+        </tr>
+        <tr>
+          <td>text()</td>
+          <td><code class="language-plaintext highlighter-rouge">string</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>say(text Or Contact Or File)</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td>⚠Contact not Support</td>
+        </tr>
+        <tr>
+          <td>type()</td>
+          <td><code class="language-plaintext highlighter-rouge">MessageType</code></td>
+          <td>✅</td>
+          <td>Message.Text</td>
+        </tr>
+        <tr>
+          <td>self()</td>
+          <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>mention()</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>❌</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>mentionSelf()</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>❌</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>forward(to)</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>date()</td>
+          <td><code class="language-plaintext highlighter-rouge">Date</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>age()</td>
+          <td><code class="language-plaintext highlighter-rouge">Number</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>toFileBox()</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>toContact()</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>toUrlLink()</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <h4 id="static-method"><a href="https://wechaty.js.org/docs/api/message#static-method">Static Method</a></h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Static Methods</th>
+          <th>Return type</th>
+          <th>Support</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>find()</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td>findAll()</td>
+          <td><code class="language-plaintext highlighter-rouge">Promise</code></td>
+          <td>✅</td>
+          <td> </td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+
+<h4 id="3-消息格式支持">3. 消息格式支持</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>消息类型</th>
+      <th>从属(根据接口返回)</th>
+      <th>获取方式</th>
+      <th>接收</th>
+      <th>发送</th>
+      <th>群聊</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>文本</td>
+      <td><code class="language-plaintext highlighter-rouge">text</code></td>
+      <td><code class="language-plaintext highlighter-rouge">message.text</code></td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td>图片</td>
+      <td><code class="language-plaintext highlighter-rouge">image</code></td>
+      <td><code class="language-plaintext highlighter-rouge">message.toImage()</code></td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td>视频</td>
+      <td><code class="language-plaintext highlighter-rouge">video</code></td>
+      <td><code class="language-plaintext highlighter-rouge">message.toFilebox()</code></td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td>音频</td>
+      <td><code class="language-plaintext highlighter-rouge">audio</code></td>
+      <td><code class="language-plaintext highlighter-rouge">message.toFilebox()</code></td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td>位置</td>
+      <td><code class="language-plaintext highlighter-rouge">location</code></td>
+      <td><code class="language-plaintext highlighter-rouge">message.toLocation()</code></td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td>文件</td>
+      <td><code class="language-plaintext highlighter-rouge">other</code></td>
+      <td><code class="language-plaintext highlighter-rouge">message.toFilebox()</code></td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td>联系人</td>
+      <td><code class="language-plaintext highlighter-rouge">other</code></td>
+      <td><code class="language-plaintext highlighter-rouge">message.toContact()</code></td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="视频展示">视频展示</h3>
+
+<div style="
+    position: relative;
+    padding-bottom: 56.25%;
+    padding-top:30px;
+    height:0;
+    overflow:hidden;
+">
+  <iframe src="https://www.youtube.com/embed/gqR2Mbouc4E" allowfullscreen="" webkitallowfullscreen="" frameborder="0" style="
+      position: absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+    ">
+</iframe>
+
+</div>
+
+<h3 id="答辩报告">答辩报告</h3>
+
+<div style="
+    position: relative;
+    padding-bottom: 56.25%;
+    padding-top:30px;
+    height:0;
+    overflow:hidden;
+">
+  <iframe src="/assets/2022/02-wechaty-puppet-walnut-final-report/wechaty-puppet-walnut-final-report" allowfullscreen="" webkitallowfullscreen="" frameborder="0" style="
+      position: absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+    ">
+</iframe>
+
+</div>
+
+<h3 id="未来与展望">未来与展望</h3>
+
+<ul>
+  <li>对 walnut 进行细节的补充和完善。</li>
+  <li>尽可能增加对其他功能的支持、并且持序维护。</li>
+</ul>
+
+<blockquote>
+  <p>Author: <a href="https://github.com/fabian4">@fabian</a></p>
+</blockquote>]]></content><author><name>fabian</name></author><category term="project" /><category term="5g" /><category term="puppet-walnut" /><category term="chatbot" /><category term="ecosystem" /><category term="plan" /><summary type="html"><![CDATA[基于 5G 平台开发 puppet 模块接入 wechaty]]></summary><media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="https://wechaty.js.org/assets/2022/02-wechaty-puppet-walnut-final-report/puppet-walnut.webp" /><media:content medium="image" url="https://wechaty.js.org/assets/2022/02-wechaty-puppet-walnut-final-report/puppet-walnut.webp" xmlns:media="http://search.yahoo.com/mrss/" /></entry></feed>
